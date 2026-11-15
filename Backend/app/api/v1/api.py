@@ -4,10 +4,11 @@ Central API router — aggregates all v1 routes.
 
 from fastapi import APIRouter
 
-from app.api.v1.routes import health, chat, rag, predict, users, items, documents, notifications
+from app.api.v1.routes import health, chat, rag, predict, users, items, documents, notifications, auth
 
 api_router = APIRouter()
 
+api_router.include_router(auth.router,           prefix="/auth",          tags=["Authentication & OTP"])
 api_router.include_router(health.router,         prefix="/health",        tags=["Health"])
 api_router.include_router(items.router,          prefix="/items",         tags=["Applications"])
 api_router.include_router(documents.router,      prefix="/documents",     tags=["Documents"])

@@ -4,6 +4,15 @@ import hashlib
 from app.core.config import settings
 
 try:
+    import bcrypt
+    if not hasattr(bcrypt, "__about__"):
+        class _About:
+            __version__ = getattr(bcrypt, "__version__", "4.0.1")
+        bcrypt.__about__ = _About()
+except Exception:
+    pass
+
+try:
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 except Exception:

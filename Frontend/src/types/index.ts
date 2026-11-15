@@ -155,3 +155,24 @@ export interface DashboardStats {
   status_distribution: StatusDistribution[];
   recent_activities: RecentActivity[];
 }
+
+export interface AuthUser {
+  id: number;
+  full_name: string;
+  email: string;
+  phone?: string | null;
+  role: string;
+  is_verified: boolean;
+  created_at?: string;
+}
+
+export interface AuthResponse {
+  status?: string;
+  message?: string;
+  email?: string;
+  purpose?: string;
+  dev_otp?: string;
+  access_token?: string;
+  token_type?: string;
+  user?: AuthUser;
+}

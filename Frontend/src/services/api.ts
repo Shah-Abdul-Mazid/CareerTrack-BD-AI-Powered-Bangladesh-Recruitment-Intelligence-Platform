@@ -10,6 +10,8 @@ import {
   ApplicationUpdatePayload,
   ApplicationListResponse,
   DashboardStats,
+  AuthUser,
+  AuthResponse,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
@@ -120,8 +122,10 @@ export interface PredictResponse {
 // ── Core request helper ───────────────────────────────────────────────────────
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('careertrack_auth_token') : null;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...((options?.headers as Record<string, string>) || {}),
   };
 
@@ -326,4 +330,41 @@ export const api = {
 
   cleanDocuments: (): Promise<{ status: string; message: string }> =>
     request<{ status: string; message: string }>('/documents/clean', { method: 'POST' }),
+
+  // ── Authentication & OAuth2 OTP ──────────────────────────────────────────
+  signup: (payload: { full_name: string; email: string; password: string; phone?: string }): Promise<AuthResponse> =>
+    request<AuthResponse>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  login: (payload: { email: string; password: string }): Promise<AuthResponse> =>
+    request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  verifyOtp: (payload: { email: string; otp: string; purpose: 'signup' | 'login' }): Promise<AuthResponse> =>
+    request<AuthResponse>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  resendOtp: (payload: { email: string; purpose: 'signup' | 'login' }): Promise<AuthResponse> =>
+    request<AuthResponse>('/auth/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getMe: (): Promise<{ authenticated: boolean; user: AuthUser | null }> =>
+    request<{ authenticated: boolean; user: AuthUser | null }>('/auth/me'),
+
+  logout: async (): Promise<void> => {
+    try {
+      await request('/auth/logout', { method: 'POST' });
+    } catch {}
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('careertrack_auth_token');
+    }
+  },
 };

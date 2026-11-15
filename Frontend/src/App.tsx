@@ -14,6 +14,7 @@ import { SeatPlanPage } from './pages/SeatPlanPage';
 import { AssistantPage } from './pages/AssistantPage';
 import { NotificationsDrawer } from './components/layout/NotificationsDrawer';
 import { ApplicationModal } from './components/applications/ApplicationModal';
+import { AuthModal } from './components/auth/AuthModal';
 import { api } from './services/api';
 import { ApplicationCreatePayload, DashboardStats } from './types';
 
@@ -181,6 +182,7 @@ export function App() {
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
       />
+      <AuthModal />
     </div>
   );
 }
