@@ -135,10 +135,20 @@ async def api_v1_root():
 
 @app.get("/health", tags=["Root"])
 async def health():
+    mongo_status = "not_connected"
+    try:
+        from app.core.mongo import get_mongodb_database
+        db = get_mongodb_database()
+        if db is not None:
+            mongo_status = f"connected: {db.name}"
+    except Exception as e:
+        mongo_status = f"error: {str(e)}"
+
     return {
         "status": "ok",
         "service": settings.PROJECT_NAME,
         "version": "1.0.0",
+        "mongodb": mongo_status,
     }
 
 
