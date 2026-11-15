@@ -39,8 +39,38 @@ except Exception:
     pass
 
 
-# ── Document Store Helpers ────────────────────────────────────────────────────
+# ── Document Store Helpers (MongoDB Atlas with File Fallback) ─────────────────
+def _get_mongo_docs_col():
+    try:
+        from app.core.mongo import get_mongodb_database
+        db = get_mongodb_database()
+        if db is not None:
+            return db["documents"]
+    except Exception as e:
+        print(f"MongoDB docs connection notice: {e}")
+    return None
+
+
+def _save_docs_to_file(docs: list[dict]):
+    try:
+        with open(DOCS_JSON_PATH, "w", encoding="utf-8") as f:
+            json.dump(docs, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
 def _load_docs() -> list[dict]:
+    # 1. Try loading directly from MongoDB Atlas
+    col = _get_mongo_docs_col()
+    if col is not None:
+        try:
+            records = list(col.find({}, {"_id": 0}).sort("created_at", -1))
+            _save_docs_to_file(records)
+            return records
+        except Exception as e:
+            print(f"MongoDB load docs warning: {e}")
+
+    # 2. Fallback to file storage
     try:
         if os.path.exists(DOCS_JSON_PATH):
             with open(DOCS_JSON_PATH, "r", encoding="utf-8") as f:
@@ -51,11 +81,19 @@ def _load_docs() -> list[dict]:
 
 
 def _save_docs(docs: list[dict]):
-    try:
-        with open(DOCS_JSON_PATH, "w", encoding="utf-8") as f:
-            json.dump(docs, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
+    # 1. Save locally to file cache
+    _save_docs_to_file(docs)
+
+    # 2. Insert and sync directly into MongoDB Atlas 'documents' collection
+    col = _get_mongo_docs_col()
+    if col is not None:
+        try:
+            col.delete_many({})
+            if docs:
+                clean_docs = [{k: v for k, v in d.items() if k != "_id"} for d in docs]
+                col.insert_many(clean_docs)
+        except Exception as e:
+            print(f"MongoDB save docs error: {e}")
 
 
 # ── Pydantic models ───────────────────────────────────────────────────────────

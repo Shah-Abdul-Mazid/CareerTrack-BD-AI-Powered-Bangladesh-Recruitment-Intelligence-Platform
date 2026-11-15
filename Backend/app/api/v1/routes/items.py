@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-# ── File-backed persistent storage ───────────────────────────────────────────
+# ── Storage Helpers (MongoDB Atlas with File Fallback) ────────────────────────
 if os.environ.get("VERCEL"):
     APPS_JSON_PATH = "/tmp/careertrack_apps.json"
 else:
@@ -29,7 +29,37 @@ else:
     APPS_JSON_PATH = os.path.join(BASE_DIR, "careertrack_apps.json")
 
 
+def _get_mongo_col(col_name: str = "items"):
+    try:
+        from app.core.mongo import get_mongodb_database
+        db = get_mongodb_database()
+        if db is not None:
+            return db[col_name]
+    except Exception as e:
+        print(f"MongoDB connection notice ({col_name}): {e}")
+    return None
+
+
+def _save_apps_to_file(apps: list[dict]):
+    try:
+        with open(APPS_JSON_PATH, "w", encoding="utf-8") as f:
+            json.dump(apps, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
 def _load_apps() -> list[dict]:
+    # 1. Try loading directly from MongoDB Atlas
+    col = _get_mongo_col("items")
+    if col is not None:
+        try:
+            records = list(col.find({}, {"_id": 0}).sort("id", 1))
+            _save_apps_to_file(records)
+            return records
+        except Exception as e:
+            print(f"MongoDB load items warning: {e}")
+
+    # 2. Fallback to file storage
     try:
         if os.path.exists(APPS_JSON_PATH):
             with open(APPS_JSON_PATH, "r", encoding="utf-8") as f:
@@ -44,11 +74,35 @@ def _load_apps() -> list[dict]:
 
 
 def _save_apps(apps: list[dict]):
-    try:
-        with open(APPS_JSON_PATH, "w", encoding="utf-8") as f:
-            json.dump(apps, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
+    # 1. Save locally to file cache
+    _save_apps_to_file(apps)
+
+    # 2. Insert and sync directly into MongoDB Atlas 'items' collection
+    col = _get_mongo_col("items")
+    if col is not None:
+        try:
+            col.delete_many({})
+            if apps:
+                clean_records = [{k: v for k, v in a.items() if k != "_id"} for a in apps]
+                col.insert_many(clean_records)
+        except Exception as e:
+            print(f"MongoDB save items error: {e}")
+
+    # 3. Insert and sync examinations into MongoDB Atlas 'item_examinations' collection
+    exam_col = _get_mongo_col("item_examinations")
+    if exam_col is not None:
+        try:
+            all_exams = []
+            for a in apps:
+                for ex in a.get("examinations", []):
+                    clean_ex = {k: v for k, v in ex.items() if k != "_id"}
+                    clean_ex["item_id"] = a.get("id")
+                    all_exams.append(clean_ex)
+            exam_col.delete_many({})
+            if all_exams:
+                exam_col.insert_many(all_exams)
+        except Exception as e:
+            print(f"MongoDB save examinations error: {e}")
 
 
 def _utcnow() -> str:
