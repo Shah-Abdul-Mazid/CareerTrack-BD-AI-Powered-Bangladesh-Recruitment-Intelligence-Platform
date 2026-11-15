@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+import time
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Any
 import hashlib
 from app.core.config import settings
@@ -46,10 +47,10 @@ def get_password_hash(password: str) -> str:
 def create_access_token(data: dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        exp_seconds = int(time.time() + expires_delta.total_seconds())
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire.timestamp() if hasattr(expire, "timestamp") else str(expire)})
+        exp_seconds = int(time.time() + settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+    to_encode["exp"] = exp_seconds
     if jwt is not None:
         try:
             return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -62,6 +63,7 @@ def decode_access_token(token: str) -> Optional[dict[str, Any]]:
     if jwt is not None:
         try:
             return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        except Exception:
+        except Exception as e:
+            print(f"Token decode error: {e}")
             return None
     return None
