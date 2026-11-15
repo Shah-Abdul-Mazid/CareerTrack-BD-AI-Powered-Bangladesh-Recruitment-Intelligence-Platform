@@ -244,9 +244,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* ── Desktop Permanent Sidebar (lg:flex) ── */}
+      {/* ── Desktop Permanent Sidebar (md:flex) ── */}
       <aside
-        className="hidden lg:flex fixed inset-y-0 left-0 z-30 flex-col transition-all duration-300 select-none"
+        className="hidden md:flex fixed inset-y-0 left-0 z-30 flex-col transition-all duration-300 select-none"
         style={{
           width: collapsed ? '72px' : '240px',
           background: '#0d0d12',
@@ -256,9 +256,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {navContent(false)}
       </aside>
 
-      {/* ── Mobile Off-Canvas Drawer (< lg) ── */}
+      {/* ── Mobile Off-Canvas Drawer (< md) ── */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 md:hidden">
           {/* Backdrop overlay */}
           <div
             className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity duration-300"

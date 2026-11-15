@@ -67,7 +67,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 select-none transition-all"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-30 select-none transition-all"
       style={{
         background: 'rgba(13, 13, 18, 0.94)',
         backdropFilter: 'blur(16px)',

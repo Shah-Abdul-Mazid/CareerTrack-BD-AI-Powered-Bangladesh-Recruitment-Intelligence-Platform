@@ -92,7 +92,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row relative" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+    <div className="min-h-screen flex flex-col md:flex-row relative" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
       {/* Sidebar (Desktop permanent + Mobile drawer) */}
       <Sidebar
         currentTab={currentTab}
@@ -116,7 +116,7 @@ export function App() {
       {/* Main Content Area */}
       <div
         className={`flex flex-col flex-1 min-h-screen w-full transition-all duration-300 ${
-          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[240px]'
+          sidebarCollapsed ? 'md:ml-[72px]' : 'md:ml-[240px]'
         }`}
       >
         <Header
@@ -127,7 +127,7 @@ export function App() {
           isBackendConnected={isBackendConnected}
         />
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto page-enter pb-24 lg:pb-8" style={{ background: 'var(--bg-base)' }}>
+        <main className="flex-1 overflow-x-hidden overflow-y-auto page-enter pb-24 md:pb-8" style={{ background: 'var(--bg-base)' }}>
           <div className="p-3.5 sm:p-5 lg:p-6 max-w-screen-2xl mx-auto">
             {currentTab === 'dashboard' && (
               <Dashboard

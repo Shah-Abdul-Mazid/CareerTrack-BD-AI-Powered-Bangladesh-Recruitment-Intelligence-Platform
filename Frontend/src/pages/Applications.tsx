@@ -164,6 +164,260 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
     return acc;
   }, {} as Record<string, number>);
 
+  const filterAppsByColumn = (colKey: string, appsList: JobApplication[] = applications) => {
+    return appsList.filter((a) => {
+      if (colKey === 'Submitted') {
+        return a.status === 'Submitted' || a.status === 'Applied' || a.status === 'Draft';
+      }
+      if (colKey === 'Admit Available') {
+        return (
+          a.status === 'Admit Available' ||
+          a.status === 'Admit Card Available' ||
+          (a.admit_card_available && a.status !== 'Exam Scheduled' && a.status !== 'Rejected' && a.status !== 'Selected')
+        );
+      }
+      return a.status === colKey;
+    });
+  };
+
+  const renderApplicationCard = (app: JobApplication) => {
+    const rollVal = app.roll_number && app.roll_number !== 'Awaiting' ? app.roll_number : (app.job_id === '26101' ? '116683' : app.roll_number);
+    const trackVal = app.tracking_id || (app.job_id === '26101' ? '26101-2052062-208657' : null);
+    const isExamActive = app.status === 'Exam Scheduled' || (app.examinations && app.examinations.length > 0) || app.job_id === '26101';
+    const examCenter = app.examinations?.[0]?.center_name || (app.job_id === '26101' ? 'Shamsul Hoque Khan School & College (School Campus)' : null);
+    const examArea = app.examinations?.[0]?.center_address || (app.job_id === '26101' ? 'Matuail, Demra Road, Jatrabari, Dhaka (Centre #3)' : null);
+    const examDate = app.examinations?.[0]?.exam_date || (app.job_id === '26101' ? 'Friday, Nov 13, 2026' : null);
+    const examTime = app.examinations?.[0]?.start_time ? `${app.examinations[0].start_time} – ${app.examinations[0].end_time}` : (app.job_id === '26101' ? '03:00 PM – 04:00 PM' : null);
+    const reportTime = app.examinations?.[0]?.reporting_time || (app.job_id === '26101' ? '02:00 PM' : null);
+
+    return (
+      <div
+        key={app.id}
+        onClick={() => { setSelectedApp(app); setIsDetailOpen(true); }}
+        className="card card-hover p-3.5 sm:p-4 space-y-3 w-full"
+        style={{ cursor: 'pointer' }}
+      >
+        {/* Card header */}
+        <div className="flex items-start justify-between gap-2">
+          <div
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(124,58,237,0.15)' }}
+          >
+            <Building className="w-4 h-4 text-purple-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-white truncate">{app.organization_name}</p>
+            <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
+              Job #{app.job_id}
+            </p>
+          </div>
+          <div onClick={(e) => e.stopPropagation()} className="flex gap-1 flex-shrink-0">
+            <button
+              onClick={() => { setSelectedApp(app); setIsEditOpen(true); }}
+              className="p-1 rounded-lg hover:bg-white/5 transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+              title="Edit application"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setDeleteConfirmApp(app)}
+              className="p-1 rounded-lg hover:bg-red-500/10 transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+              title="Delete application"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Post name */}
+        <p className="text-sm font-semibold text-white leading-snug line-clamp-2">
+          {app.post_name}
+          {app.grade && <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>({app.grade})</span>}
+        </p>
+
+        {/* Roll & Tracking Badges */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="badge-purple font-mono font-bold text-[10px]">#{app.job_id}</span>
+          {app.status === 'Submitted' && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">
+              📝 Submitted
+            </span>
+          )}
+          {app.admit_card_available && <span className="badge-green font-semibold text-[10px]">✓ Admit Ready</span>}
+          {rollVal && (
+            <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Roll: {rollVal}
+            </span>
+          )}
+          {trackVal && (
+            <span className="text-[10px] font-mono text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded truncate max-w-[170px]" title={`Tracking: ${trackVal}`}>
+              ID: {trackVal}
+            </span>
+          )}
+        </div>
+
+        {/* Seat Plan Sub-badge for Admit Available cards */}
+        {(app.status === 'Admit Available' || app.admit_card_available) && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            {(app.seat_plan_status === 'Included in Admit' || app.seat_plan_status === 'Seat Plan Ready' || isExamActive) ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                ✓ Seat Plan Ready
+              </span>
+            ) : (
+              <div className="flex items-center gap-1.5 w-full justify-between">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                  ⏳ Seat Plan Pending (TBA)
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSeatPlanRoll(parseInt(String(rollVal || '116683'), 10) || 116683);
+                    setIsSeatPlanOpen(true);
+                  }}
+                  className="text-[10px] font-bold text-amber-300 hover:text-white px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-all flex items-center gap-1"
+                >
+                  + Upload Seat Plan PDF
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Multi-PDF Attachments Pill Bar */}
+        {(app.submit_pdf_url || app.admit_pdf_url || app.seat_plan_pdf_url) && (
+          <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-zinc-800/80">
+            {app.submit_pdf_url && (
+              <a
+                href={app.submit_pdf_url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-[10px] font-medium text-blue-300 bg-blue-950/40 hover:bg-blue-900/60 px-2 py-0.5 rounded border border-blue-500/30 transition-colors flex items-center gap-1"
+                title="View Application Submit PDF"
+              >
+                📄 App Copy
+              </a>
+            )}
+            {app.admit_pdf_url && (
+              <a
+                href={app.admit_pdf_url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-[10px] font-medium text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 transition-colors flex items-center gap-1"
+                title="View Admit Card PDF"
+              >
+                🎫 Admit Card
+              </a>
+            )}
+            {app.seat_plan_pdf_url && (
+              <a
+                href={app.seat_plan_pdf_url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-[10px] font-medium text-purple-300 bg-purple-950/40 hover:bg-purple-900/60 px-2 py-0.5 rounded border border-purple-500/30 transition-colors flex items-center gap-1"
+                title="View Seat Plan PDF"
+              >
+                🗺️ Seat Plan
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Scheduled Exam Callout Card — renders whenever exam is active */}
+        {isExamActive && (
+          <div
+            className="p-3 rounded-xl border border-amber-500/40 bg-gradient-to-br from-amber-500/15 to-purple-500/10 space-y-2 shadow-md hover:border-amber-400 transition-all"
+            onClick={(e) => { e.stopPropagation(); setSelectedApp(app); setIsDetailOpen(true); }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 flex items-center gap-1">
+                <Clock className="w-3 h-3 text-amber-400" />
+                100 Marks MCQ Exam
+              </span>
+              <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                Confirmed
+              </span>
+            </div>
+
+            {/* Exam Date & Time */}
+            <div className="space-y-1 text-xs">
+              <p className="font-bold text-white flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span>{examDate}</span>
+                {examTime && <span className="text-amber-300 font-mono">· {examTime}</span>}
+              </p>
+
+              {reportTime && (
+                <p className="text-[11px] text-zinc-300 flex items-center gap-1.5 pl-5">
+                  <span>Reporting Time: <strong className="text-white font-mono">{reportTime}</strong> (Gate closes before test)</span>
+                </p>
+              )}
+            </div>
+
+            {/* Exam Venue / Center */}
+            {examCenter && (
+              <div className="pt-1.5 border-t border-amber-500/20">
+                <p className="text-[11px] font-bold text-white flex items-start gap-1 leading-snug">
+                  <MapPin className="w-3.5 h-3.5 text-rose-400 flex-shrink-0 mt-0.5" />
+                  <span>{examCenter}</span>
+                </p>
+                {examArea && (
+                  <p className="text-[10px] text-zinc-400 pl-4.5 mt-0.5">
+                    {examArea}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Bottom info row */}
+            <div className="pt-2 flex items-center justify-between border-t border-amber-500/20">
+              <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
+                Roll: {rollVal}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSeatPlanRoll(parseInt(String(rollVal || '116683'), 10) || 116683);
+                  setIsSeatPlanOpen(true);
+                }}
+                className="text-[10px] font-bold text-amber-300 hover:text-white px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 transition-all flex items-center gap-1"
+              >
+                <FileSpreadsheet className="w-3 h-3" />
+                Seat Plan
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-2 gap-2" style={{ borderTop: '1px solid var(--border)' }}>
+          <span className="text-[11px] flex items-center gap-1 truncate" style={{ color: 'var(--text-muted)' }}>
+            <Calendar className="w-3 h-3 flex-shrink-0" />
+            {app.deadline ? `Due: ${app.deadline}` : 'No deadline'}
+          </span>
+          <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
+            <select
+              value={app.status}
+              onChange={(e) => handleQuickStatusChange(app.id, e.target.value)}
+              className="text-[10px] font-bold py-1 px-1.5 rounded-lg cursor-pointer bg-zinc-800 border border-zinc-700 text-zinc-200 hover:border-purple-500 focus:outline-none transition-colors"
+              title="Quick Stage Switcher"
+            >
+              {STATUS_FILTERS.filter(s => s !== 'All').map((st) => (
+                <option key={st} value={st}>{st}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5">
 
@@ -342,7 +596,7 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
             className="input-dark pl-9 w-full" />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-2">
           <Filter className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
           <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="input-dark py-2 text-xs sm:text-sm pr-7 flex-1 sm:flex-initial"
@@ -377,294 +631,163 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
           onAction={() => setIsCreateModalOpen(true)}
         />
       ) : viewMode === 'board' ? (
+        <div className="space-y-4 w-full">
+          {/* ── Stage Filter Pills Bar (Fit to Screen, No Horizontal Swiping) ── */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => { setStatusFilter('All'); setPage(1); }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                statusFilter === 'All'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 border border-zinc-800'
+              }`}
+            >
+              <span>▦ All Stages</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                statusFilter === 'All' ? 'bg-purple-900/60 text-white' : 'bg-zinc-800 text-zinc-400'
+              }`}>
+                {total}
+              </span>
+            </button>
 
-        /* ── KANBAN BOARD (My Board style) ── */
-        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-6 pt-1 snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
-          {BOARD_COLUMNS.map((col) => {
-            const colApps = applications.filter((a) => {
-              if (col.key === 'Submitted') {
-                return a.status === 'Submitted' || a.status === 'Applied' || a.status === 'Draft';
-              }
-              if (col.key === 'Admit Available') {
+            {BOARD_COLUMNS.map((col) => {
+              const isCurrent = statusFilter === col.key;
+              const count = counts[col.key] || filterAppsByColumn(col.key).length;
+              return (
+                <button
+                  key={col.key}
+                  type="button"
+                  onClick={() => { setStatusFilter(isCurrent ? 'All' : col.key); setPage(1); }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    isCurrent
+                      ? 'text-white shadow-md'
+                      : 'bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 border border-zinc-800'
+                  }`}
+                  style={isCurrent ? { background: col.accent, borderColor: col.accent } : {}}
+                >
+                  <span>{col.emoji} {col.label}</span>
+                  <span
+                    className="px-1.5 py-0.5 rounded-full text-[10px] font-mono"
+                    style={isCurrent ? { background: 'rgba(0,0,0,0.35)', color: '#fff' } : { background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── Either Focused Stage View OR All-Stages Fit Grid ── */}
+          {statusFilter !== 'All' ? (
+            /* ── Single Stage Focused View (Fits Screen Full Width, No Horizontal Swiping) ── */
+            <div className="space-y-3 w-full">
+              {(() => {
+                const activeCol = BOARD_COLUMNS.find(c => c.key === statusFilter);
+                const activeApps = filterAppsByColumn(statusFilter);
                 return (
-                  a.status === 'Admit Available' ||
-                  a.status === 'Admit Card Available' ||
-                  (a.admit_card_available && a.status !== 'Exam Scheduled' && a.status !== 'Rejected' && a.status !== 'Selected')
-                );
-              }
-              return a.status === col.key;
-            });
-            return (
-              <div key={col.key} className="w-[82vw] sm:w-72 flex-shrink-0 flex flex-col max-h-[calc(100vh-260px)] snap-start">
-                {/* Column header */}
-                <div className="flex items-center justify-between px-1 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-5 rounded-full flex-shrink-0"
-                      style={{ background: col.accent }} />
-                    <span className="text-sm font-bold text-white">{col.label}</span>
-                    <span className="w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center"
-                      style={{ background: `${col.accent}25`, color: col.accent }}>
-                      {colApps.length}
-                    </span>
-                  </div>
-                  <button className="p-1 rounded-lg hover:bg-white/5 transition-colors"
-                    style={{ color: 'var(--text-muted)' }}>
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                {/* Cards */}
-                <div className="flex-1 overflow-y-auto space-y-3 kanban-col pr-1">
-                  {colApps.map((app) => (
-                    <div key={app.id}
-                      onClick={() => { setSelectedApp(app); setIsDetailOpen(true); }}
-                      className="card card-hover p-4 space-y-3"
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {/* Card header */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                          style={{ background: 'rgba(124,58,237,0.15)' }}>
-                          <Building className="w-4 h-4 text-purple-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{app.organization_name}</p>
-                          <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
-                            Job #{app.job_id}
-                          </p>
-                        </div>
-                        <div onClick={(e) => e.stopPropagation()} className="flex gap-1 flex-shrink-0">
-                          <button onClick={() => { setSelectedApp(app); setIsEditOpen(true); }}
-                            className="p-1 rounded-lg hover:bg-white/5 transition-colors"
-                            style={{ color: 'var(--text-muted)' }}>
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => setDeleteConfirmApp(app)}
-                            className="p-1 rounded-lg hover:bg-red-500/10 transition-colors"
-                            style={{ color: 'var(--text-muted)' }}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Post name */}
-                      <p className="text-sm font-semibold text-white leading-snug">
-                        {app.post_name}
-                        {app.grade && <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>({app.grade})</span>}
-                      </p>
-
-                      {/* Roll & Tracking Badges */}
-                      {(() => {
-                        const rollVal = app.roll_number && app.roll_number !== 'Awaiting' ? app.roll_number : (app.job_id === '26101' ? '116683' : app.roll_number);
-                        const trackVal = app.tracking_id || (app.job_id === '26101' ? '26101-2052062-208657' : null);
-                        const isExamActive = app.status === 'Exam Scheduled' || (app.examinations && app.examinations.length > 0) || app.job_id === '26101';
-                        const examCenter = app.examinations?.[0]?.center_name || (app.job_id === '26101' ? 'Shamsul Hoque Khan School & College (School Campus)' : null);
-                        const examArea = app.examinations?.[0]?.center_address || (app.job_id === '26101' ? 'Matuail, Demra Road, Jatrabari, Dhaka (Centre #3)' : null);
-                        const examDate = app.examinations?.[0]?.exam_date || (app.job_id === '26101' ? 'Friday, Nov 13, 2026' : null);
-                        const examTime = app.examinations?.[0]?.start_time ? `${app.examinations[0].start_time} – ${app.examinations[0].end_time}` : (app.job_id === '26101' ? '03:00 PM – 04:00 PM' : null);
-                        const reportTime = app.examinations?.[0]?.reporting_time || (app.job_id === '26101' ? '02:00 PM' : null);
-
-                        return (
-                          <>
-                            {/* Badges */}
-                            <div className="flex flex-wrap gap-1.5 items-center">
-                              <span className="badge-purple font-mono font-bold">#{app.job_id}</span>
-                              {app.status === 'Submitted' && (
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">
-                                  📝 Submitted
-                                </span>
-                              )}
-                              {app.admit_card_available && <span className="badge-green font-semibold">✓ Admit Ready</span>}
-                              {rollVal && (
-                                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                                  Roll: {rollVal}
-                                </span>
-                              )}
-                              {trackVal && (
-                                <span className="text-[10px] font-mono text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded truncate max-w-[170px]" title={`Tracking: ${trackVal}`}>
-                                  ID: {trackVal}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Seat Plan Sub-badge for Admit Available cards */}
-                            {(app.status === 'Admit Available' || app.admit_card_available) && (
-                              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                                {(app.seat_plan_status === 'Included in Admit' || app.seat_plan_status === 'Seat Plan Ready' || isExamActive) ? (
-                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                                    ✓ Seat Plan Ready
-                                  </span>
-                                ) : (
-                                  <div className="flex items-center gap-1.5 w-full justify-between">
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
-                                      ⏳ Seat Plan Pending (TBA)
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSeatPlanRoll(parseInt(String(rollVal || '116683'), 10) || 116683);
-                                        setIsSeatPlanOpen(true);
-                                      }}
-                                      className="text-[10px] font-bold text-amber-300 hover:text-white px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-all flex items-center gap-1"
-                                    >
-                                      + Upload Seat Plan PDF
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Multi-PDF Attachments Pill Bar */}
-                            {(app.submit_pdf_url || app.admit_pdf_url || app.seat_plan_pdf_url) && (
-                              <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-zinc-800/80">
-                                {app.submit_pdf_url && (
-                                  <a
-                                    href={app.submit_pdf_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-[10px] font-medium text-blue-300 bg-blue-950/40 hover:bg-blue-900/60 px-2 py-0.5 rounded border border-blue-500/30 transition-colors flex items-center gap-1"
-                                    title="View Application Submit PDF"
-                                  >
-                                    📄 App Copy
-                                  </a>
-                                )}
-                                {app.admit_pdf_url && (
-                                  <a
-                                    href={app.admit_pdf_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-[10px] font-medium text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 transition-colors flex items-center gap-1"
-                                    title="View Admit Card PDF"
-                                  >
-                                    🎫 Admit Card
-                                  </a>
-                                )}
-                                {app.seat_plan_pdf_url && (
-                                  <a
-                                    href={app.seat_plan_pdf_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-[10px] font-medium text-purple-300 bg-purple-950/40 hover:bg-purple-900/60 px-2 py-0.5 rounded border border-purple-500/30 transition-colors flex items-center gap-1"
-                                    title="View Seat Plan PDF"
-                                  >
-                                    🗺️ Seat Plan
-                                  </a>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Scheduled Exam Callout Card — renders whenever exam is active */}
-                            {isExamActive && (
-                              <div
-                                className="p-3 rounded-xl border border-amber-500/40 bg-gradient-to-br from-amber-500/15 to-purple-500/10 space-y-2 shadow-md hover:border-amber-400 transition-all"
-                                onClick={(e) => { e.stopPropagation(); setSelectedApp(app); setIsDetailOpen(true); }}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 flex items-center gap-1">
-                                    <Clock className="w-3 h-3 text-amber-400" />
-                                    100 Marks MCQ Exam
-                                  </span>
-                                  <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                                    Confirmed
-                                  </span>
-                                </div>
-
-                                {/* Exam Date & Time */}
-                                <div className="space-y-1 text-xs">
-                                  <p className="font-bold text-white flex items-center gap-1.5">
-                                    <Calendar className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                                    <span>{examDate}</span>
-                                    {examTime && <span className="text-amber-300 font-mono">· {examTime}</span>}
-                                  </p>
-
-                                  {reportTime && (
-                                    <p className="text-[11px] text-zinc-300 flex items-center gap-1.5 pl-5">
-                                      <span>Reporting Time: <strong className="text-white font-mono">{reportTime}</strong> (Gate closes before test)</span>
-                                    </p>
-                                  )}
-                                </div>
-
-                                {/* Exam Venue / Center */}
-                                {examCenter && (
-                                  <div className="pt-1.5 border-t border-amber-500/20">
-                                    <p className="text-[11px] font-bold text-white flex items-start gap-1 leading-snug">
-                                      <MapPin className="w-3.5 h-3.5 text-rose-400 flex-shrink-0 mt-0.5" />
-                                      <span>{examCenter}</span>
-                                    </p>
-                                    {examArea && (
-                                      <p className="text-[10px] text-zinc-400 pl-4.5 mt-0.5">
-                                        {examArea}
-                                      </p>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Bottom info row */}
-                                <div className="pt-2 flex items-center justify-between border-t border-amber-500/20">
-                                  <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
-                                    Roll: {rollVal}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSeatPlanRoll(parseInt(String(rollVal || '116683'), 10) || 116683);
-                                      setIsSeatPlanOpen(true);
-                                    }}
-                                    className="text-[10px] font-bold text-amber-300 hover:text-white px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 transition-all flex items-center gap-1"
-                                  >
-                                    <FileSpreadsheet className="w-3 h-3" />
-                                    Seat Plan (Centre #3)
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-
-                      {/* Footer */}
-                      <div className="flex items-center justify-between pt-2 gap-2"
-                        style={{ borderTop: '1px solid var(--border)' }}>
-                        <span className="text-[11px] flex items-center gap-1 truncate" style={{ color: 'var(--text-muted)' }}>
-                          <Calendar className="w-3 h-3 flex-shrink-0" />
-                          {app.deadline ? `Due: ${app.deadline}` : 'No deadline'}
+                  <>
+                    <div className="flex items-center justify-between p-3 sm:p-4 rounded-2xl bg-zinc-900/70 border border-zinc-800">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ background: activeCol?.accent || '#7c3aed' }}
+                        />
+                        <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                          <span>{activeCol?.emoji || '📋'}</span>
+                          <span>Stage: {statusFilter}</span>
+                        </h3>
+                        <span
+                          className="px-2 py-0.5 rounded-full text-xs font-bold font-mono"
+                          style={{
+                            background: `${activeCol?.accent || '#7c3aed'}25`,
+                            color: activeCol?.accent || '#a78bfa',
+                          }}
+                        >
+                          {activeApps.length} {activeApps.length === 1 ? 'application' : 'applications'}
                         </span>
-                        <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
-                          <select
-                            value={app.status}
-                            onChange={(e) => handleQuickStatusChange(app.id, e.target.value)}
-                            className="text-[10px] font-bold py-1 px-1.5 rounded-lg cursor-pointer bg-zinc-800 border border-zinc-700 text-zinc-200 hover:border-purple-500 focus:outline-none transition-colors"
-                            title="Quick Stage Switcher"
-                          >
-                            {STATUS_FILTERS.filter(s => s !== 'All').map((st) => (
-                              <option key={st} value={st}>{st}</option>
-                            ))}
-                          </select>
-                        </div>
                       </div>
-                    </div>
-                  ))}
-
-                  {colApps.length === 0 && (
-                    <div className="rounded-2xl border-2 border-dashed p-8 text-center"
-                      style={{ borderColor: 'var(--border)' }}>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No applications</p>
-                      <button onClick={() => setIsCreateModalOpen(true)}
-                        className="text-xs mt-2 font-semibold transition-colors hover:text-purple-300"
-                        style={{ color: '#7c3aed' }}>
-                        + Add application
+                      <button
+                        type="button"
+                        onClick={() => { setStatusFilter('All'); setPage(1); }}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                      >
+                        ✕ View All Stages Grid
                       </button>
                     </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+
+                    {activeApps.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 w-full">
+                        {activeApps.map((app) => renderApplicationCard(app))}
+                      </div>
+                    ) : (
+                      <div className="card p-12 text-center border-dashed">
+                        <p className="text-sm text-zinc-400">No applications currently in {statusFilter} stage.</p>
+                        <button
+                          onClick={() => setIsCreateModalOpen(true)}
+                          className="btn-primary mt-3 text-xs mx-auto"
+                        >
+                          + Add Application
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          ) : (
+            /* ── All Stages Fit Grid (Responsive Multi-Column Grid, Zero Horizontal Scroll) ── */
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7 gap-3.5 items-start">
+              {BOARD_COLUMNS.map((col) => {
+                const colApps = filterAppsByColumn(col.key);
+                return (
+                  <div
+                    key={col.key}
+                    className="w-full min-w-0 flex flex-col rounded-2xl p-3 border border-zinc-800/80 shadow-sm"
+                    style={{ background: 'rgba(18, 17, 29, 0.7)' }}
+                  >
+                    {/* Column Header */}
+                    <div className="flex items-center justify-between pb-2.5 border-b border-zinc-800/80">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: col.accent }} />
+                        <span className="text-xs sm:text-sm font-bold text-white truncate">{col.label}</span>
+                        <span
+                          className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold flex-shrink-0"
+                          style={{ background: `${col.accent}20`, color: col.accent }}
+                        >
+                          {colApps.length}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="p-1 rounded-lg hover:bg-white/5 transition-colors text-zinc-400 hover:text-white"
+                        title={`Add application in ${col.label}`}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Cards */}
+                    <div className="mt-3 space-y-3">
+                      {colApps.length > 0 ? (
+                        colApps.map((app) => renderApplicationCard(app))
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-zinc-800 p-5 text-center">
+                          <p className="text-[11px] text-zinc-500">No applications</p>
+                          <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="text-[11px] mt-1 font-semibold text-purple-400 hover:text-purple-300"
+                          >
+                            + Add application
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
       ) : (
