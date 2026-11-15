@@ -350,8 +350,20 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
-  resendOtp: (payload: { email: string; purpose: 'signup' | 'login' }): Promise<AuthResponse> =>
+  resendOtp: (payload: { email: string; purpose: 'signup' | 'login' | 'password_reset' }): Promise<AuthResponse> =>
     request<AuthResponse>('/auth/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  forgotPassword: (email: string): Promise<AuthResponse> =>
+    request<AuthResponse>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (payload: { email: string; otp: string; new_password: string }): Promise<{ status: string; message: string; email: string }> =>
+    request<{ status: string; message: string; email: string }>('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),

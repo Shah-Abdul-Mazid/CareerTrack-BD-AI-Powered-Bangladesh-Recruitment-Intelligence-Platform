@@ -14,7 +14,9 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<AuthResponse>;
   signup: (payload: { full_name: string; email: string; password: string; phone?: string }) => Promise<AuthResponse>;
   verifyOtp: (email: string, otp: string, purpose: 'signup' | 'login') => Promise<AuthResponse>;
-  resendOtp: (email: string, purpose: 'signup' | 'login') => Promise<AuthResponse>;
+  resendOtp: (email: string, purpose: 'signup' | 'login' | 'password_reset') => Promise<AuthResponse>;
+  forgotPassword: (email: string) => Promise<AuthResponse>;
+  resetPassword: (payload: { email: string; otp: string; new_password: string }) => Promise<{ status: string; message: string; email: string }>;
   logout: () => Promise<void>;
   continueAsGuest: () => void;
 }
@@ -107,8 +109,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return res;
   };
 
-  const resendOtp = async (email: string, purpose: 'signup' | 'login'): Promise<AuthResponse> => {
+  const resendOtp = async (email: string, purpose: 'signup' | 'login' | 'password_reset'): Promise<AuthResponse> => {
     return await api.resendOtp({ email, purpose });
+  };
+
+  const forgotPassword = async (email: string): Promise<AuthResponse> => {
+    return await api.forgotPassword(email);
+  };
+
+  const resetPassword = async (payload: { email: string; otp: string; new_password: string }): Promise<{ status: string; message: string; email: string }> => {
+    return await api.resetPassword(payload);
   };
 
   const continueAsGuest = () => {
@@ -149,6 +159,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         signup,
         verifyOtp,
         resendOtp,
+        forgotPassword,
+        resetPassword,
         logout,
         continueAsGuest,
       }}
