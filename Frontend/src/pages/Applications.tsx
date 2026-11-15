@@ -57,6 +57,28 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
   const [deleteConfirmApp, setDeleteConfirmApp] = useState<JobApplication | null>(null);
   const [isSeatPlanOpen, setIsSeatPlanOpen] = useState(false);
   const [seatPlanRoll, setSeatPlanRoll] = useState<number>(116683);
+  const [cleaning, setCleaning] = useState(false);
+  const [cleanMessage, setCleanMessage] = useState<string | null>(null);
+
+  const handleCleanDatabase = async () => {
+    if (!window.confirm('Are you sure you want to clean all applications from the database to start from a 100% empty slate?')) return;
+    setCleaning(true);
+    setCleanMessage(null);
+    try {
+      await api.cleanDatabase();
+      try { await api.cleanDocuments(); } catch {}
+      setApplications([]);
+      setTotal(0);
+      setTotalPages(1);
+      setCleanMessage('Database cleaned successfully. 0 applications remaining. Ready to add your applications manually!');
+      window.dispatchEvent(new CustomEvent('application-updated'));
+      window.dispatchEvent(new CustomEvent('application-created'));
+    } catch (e: any) {
+      alert(`Clean failed: ${e.message}`);
+    } finally {
+      setCleaning(false);
+    }
+  };
 
   const fetchApplications = async () => {
     try {
@@ -153,12 +175,12 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
             Bangladesh bank &amp; government recruitment pipeline
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* View switcher */}
           <div className="flex items-center rounded-xl p-1" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             {(['board', 'table'] as const).map((mode) => (
               <button key={mode} onClick={() => setViewMode(mode)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all`}
+                className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs font-semibold transition-all`}
                 style={viewMode === mode ? {
                   background: '#7c3aed', color: '#fff',
                 } : { color: 'var(--text-muted)' }}>
@@ -167,11 +189,34 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
               </button>
             ))}
           </div>
-          <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary text-sm">
+
+          <button
+            onClick={handleCleanDatabase}
+            disabled={cleaning}
+            className="px-3 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95"
+            title="Clean all applications to start from 0"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{cleaning ? 'Cleaning…' : 'Clean Database (0 items)'}</span>
+          </button>
+
+          <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary text-xs sm:text-sm px-3.5 sm:px-4 py-2">
             <Plus className="w-4 h-4" /> Add Application
           </button>
         </div>
       </div>
+
+      {cleanMessage && (
+        <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            {cleanMessage}
+          </span>
+          <button onClick={() => setCleanMessage(null)} className="text-zinc-400 hover:text-white text-xs">
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* ── Upcoming Confirmed Exam Callout Banner ── */}
       {(() => {

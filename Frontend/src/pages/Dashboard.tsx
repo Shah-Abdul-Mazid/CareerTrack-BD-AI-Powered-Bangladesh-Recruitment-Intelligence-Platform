@@ -170,7 +170,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <TrendingUp className="w-3 h-3" /> +12.67%
             </span>
           </div>
-          <p className="text-[11px] text-zinc-500">Nov 13 (Shamsul Hoque Khan)</p>
+          <p className="text-[11px] text-zinc-500">{examCount > 0 ? `${examCount} upcoming exam(s)` : 'No confirmed exams'}</p>
         </div>
 
         {/* Selected / Shortlisted */}
@@ -345,38 +345,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="space-y-2.5">
-            {/* Confirmed Exam — from seed */}
-            <div className="p-3 rounded-xl bg-amber-400/90 text-zinc-950 font-medium space-y-1">
-              <div className="flex items-center justify-between text-xs font-black">
-                <span>MCQ Examination</span>
-                <span className="text-[10px] font-mono">03:00 PM</span>
+            {examCount > 0 ? (
+              <>
+                <div className="p-3 rounded-xl bg-amber-400/90 text-zinc-950 font-medium space-y-1">
+                  <div className="flex items-center justify-between text-xs font-black">
+                    <span>MCQ Examination</span>
+                    <span className="text-[10px] font-mono">03:00 PM</span>
+                  </div>
+                  <p className="text-[11px] font-semibold text-zinc-900 leading-tight">
+                    Exam venue confirmed via Seat Plan
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-white text-zinc-950 font-medium space-y-1">
+                  <div className="flex items-center justify-between text-xs font-black">
+                    <span>Candidate Reporting</span>
+                    <span className="text-[10px] font-mono">02:00 PM</span>
+                  </div>
+                  <p className="text-[11px] font-semibold text-zinc-700 leading-tight">
+                    Admit Card &amp; NID Verification at Gate
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="p-4 rounded-xl bg-zinc-900/60 border border-dashed border-zinc-800 text-center py-6">
+                <Calendar className="w-6 h-6 text-zinc-600 mx-auto mb-2" />
+                <p className="text-xs font-bold text-zinc-400">No scheduled exams</p>
+                <p className="text-[10px] text-zinc-500 mt-0.5">Upload an Admit Card or Seat Plan PDF to track exam schedules</p>
               </div>
-              <p className="text-[11px] font-semibold text-zinc-900 leading-tight">
-                Combined 9 Banks · Shamsul Hoque Khan School
-              </p>
-            </div>
-
-            {/* Reporting Time */}
-            <div className="p-3 rounded-xl bg-white text-zinc-950 font-medium space-y-1">
-              <div className="flex items-center justify-between text-xs font-black">
-                <span>Candidate Reporting</span>
-                <span className="text-[10px] font-mono">02:00 PM</span>
-              </div>
-              <p className="text-[11px] font-semibold text-zinc-700 leading-tight">
-                Admit Card &amp; NID Verification at Gate
-              </p>
-            </div>
-
-            {/* Pending exams */}
-            <div className="p-3 rounded-xl bg-zinc-800/90 text-zinc-200 border border-zinc-700/60 space-y-1">
-              <div className="flex items-center justify-between text-xs font-bold text-white">
-                <span>5 Other Applications</span>
-                <span className="text-[10px] text-zinc-400">TBD</span>
-              </div>
-              <p className="text-[11px] text-zinc-400 leading-tight">
-                Admit cards not yet issued — monitor portals
-              </p>
-            </div>
+            )}
           </div>
         </div>
 
@@ -391,10 +387,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="space-y-3">
             {[
-              { title: 'Admit Card Verified', progress: '100%', sub: 'Combined 9 Banks #26101 — Roll 116683', done: true },
-              { title: 'Seat Plan Allocated', progress: '100%', sub: 'Centre 3 · Shamsul Hoque Khan School', done: true },
-              { title: 'Upload Admit Cards', progress: `${examCount > 0 ? 100 : 0}%`, sub: 'Upload PDF via Documents & Admit', done: examCount > 0 },
-              { title: 'Monitor 5 Portals', progress: '0%', sub: 'Waiting for exam notices (26104–26109)', done: false },
+              { title: 'Add Job Applications', progress: `${totalApps > 0 ? 100 : 0}%`, sub: `${totalApps} active application(s) registered`, done: totalApps > 0 },
+              { title: 'Upload Admit Cards', progress: `${examCount > 0 ? 100 : 0}%`, sub: 'Upload PDF via Admit Card Upload', done: examCount > 0 },
+              { title: 'Seat Plan Verification', progress: `${examCount > 0 ? 100 : 0}%`, sub: `${examCount} exam center allocated`, done: examCount > 0 },
+              { title: 'Viva / Shortlist', progress: `${stats?.shortlisted_count ? 100 : 0}%`, sub: 'Awaiting interview notices', done: Boolean(stats?.shortlisted_count) },
             ].map((task) => (
               <div key={task.title} className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between">
                 <div>
@@ -422,37 +418,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {(stats?.recent_activities?.length
-              ? stats.recent_activities.slice(0, 4)
-              : [
-                  { id: 1, title: 'Senior Officer (General) @ Combined 9 Banks & 2 FIs', job_id: '26101', status: 'Exam Scheduled', date: '2026-11-13', action: '' },
-                  { id: 2, title: 'Assistant Programmer @ Combined 8 Banks', job_id: '26106', status: 'Submitted', date: '', action: '' },
-                  { id: 3, title: 'Asst. Database Admin @ Sonali Bank PLC', job_id: '26109', status: 'Submitted', date: '', action: '' },
-                  { id: 4, title: 'Officer IT/MIS @ Combined 10 Banks', job_id: '26105', status: 'Submitted', date: '', action: '' },
-                ]
-            ).map((vac) => {
-              const [postPart, orgPart] = (vac.title || '').split('@');
-              const statusColor = vac.status === 'Exam Scheduled' ? '#f59e0b' : vac.status === 'Shortlisted' ? '#10b981' : '#3b82f6';
-              return (
-                <div key={vac.id} className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-purple-500/40 transition-colors flex flex-col justify-between space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 pr-2">
-                      <p className="text-xs font-bold text-white truncate">{postPart?.trim()}</p>
-                      <p className="text-[10px] text-zinc-400 truncate mt-0.5">{orgPart?.trim()}</p>
+            {stats?.recent_activities && stats.recent_activities.length > 0 ? (
+              stats.recent_activities.slice(0, 4).map((vac) => {
+                const [postPart, orgPart] = (vac.title || '').split('@');
+                const statusColor = vac.status === 'Exam Scheduled' ? '#f59e0b' : vac.status === 'Shortlisted' ? '#10b981' : '#3b82f6';
+                return (
+                  <div key={vac.id} className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-purple-500/40 transition-colors flex flex-col justify-between space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 pr-2">
+                        <p className="text-xs font-bold text-white truncate">{postPart?.trim()}</p>
+                        <p className="text-[10px] text-zinc-400 truncate mt-0.5">{orgPart?.trim()}</p>
+                      </div>
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-purple-300">
+                        #{vac.job_id}
+                      </span>
                     </div>
-                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-purple-300">
-                      #{vac.job_id}
-                    </span>
+                    <div className="flex items-center justify-between pt-1 border-t border-zinc-800/80 text-[10px]">
+                      <span className="font-semibold" style={{ color: statusColor }}>{vac.status}</span>
+                      <button onClick={onNavigateToApplications} className="text-zinc-500 hover:text-white flex items-center gap-0.5">
+                        View <ArrowUpRight className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-zinc-800/80 text-[10px]">
-                    <span className="font-semibold" style={{ color: statusColor }}>{vac.status}</span>
-                    <button onClick={onNavigateToApplications} className="text-zinc-500 hover:text-white flex items-center gap-0.5">
-                      View <ArrowUpRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="col-span-full p-6 rounded-xl border border-dashed border-zinc-800 text-center">
+                <Briefcase className="w-6 h-6 text-zinc-600 mx-auto mb-2" />
+                <p className="text-xs font-bold text-zinc-400">Database is empty (0 applications)</p>
+                <p className="text-[10px] text-zinc-500 mt-1 mb-3">Add your first job application manually or upload an application PDF.</p>
+                <button
+                  onClick={onOpenNewApplication}
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 transition-colors inline-flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Application
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

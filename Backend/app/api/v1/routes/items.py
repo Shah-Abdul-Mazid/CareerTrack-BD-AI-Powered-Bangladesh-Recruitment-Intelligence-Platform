@@ -39,14 +39,8 @@ def _load_apps() -> list[dict]:
     except Exception:
         pass
 
-    # If storage file does not exist yet (fresh deploy), seed with defaults
-    try:
-        from app.api.v1.routes.seed import SEED_APPLICATIONS
-        initial = [dict(a) for a in SEED_APPLICATIONS]
-        _save_apps(initial)
-        return initial
-    except Exception:
-        return []
+    # Start from an empty slate (0 applications)
+    return []
 
 
 def _save_apps(apps: list[dict]):

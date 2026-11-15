@@ -736,3 +736,9 @@ async def list_documents(category: Optional[str] = None):
         DocumentItemResponse(**{k: v for k, v in d.items()})
         for d in sorted(docs, key=lambda x: x.get("created_at", ""), reverse=True)
     ]
+
+
+@router.post("/clean", summary="Clean all uploaded recruitment documents history")
+async def clean_documents():
+    _save_docs([])
+    return {"status": "ok", "message": "Documents history cleaned successfully."}

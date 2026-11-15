@@ -319,4 +319,11 @@ export const api = {
       body: JSON.stringify({ text }),
     });
   },
+
+  // ── Database Reset / Clean ────────────────────────────────────────────────
+  cleanDatabase: (): Promise<{ status: string; message: string }> =>
+    request<{ status: string; message: string }>('/items/clean', { method: 'POST' }),
+
+  cleanDocuments: (): Promise<{ status: string; message: string }> =>
+    request<{ status: string; message: string }>('/documents/clean', { method: 'POST' }),
 };
