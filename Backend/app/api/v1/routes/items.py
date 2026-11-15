@@ -97,6 +97,9 @@ def _save_apps(apps: list[dict]):
                 for ex in a.get("examinations", []):
                     clean_ex = {k: v for k, v in ex.items() if k != "_id"}
                     clean_ex["item_id"] = a.get("id")
+                    clean_ex["job_id"] = a.get("job_id")
+                    clean_ex["organization_name"] = a.get("organization_name")
+                    clean_ex["post_name"] = a.get("post_name")
                     all_exams.append(clean_ex)
             exam_col.delete_many({})
             if all_exams:
