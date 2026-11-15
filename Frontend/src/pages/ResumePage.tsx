@@ -5,8 +5,12 @@ import {
   Code2, Cpu, Globe, Mail, Phone, MapPin, BookOpen,
   Layers, FolderGit2, UserCheck, ShieldCheck, ChevronRight
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export const ResumePage: React.FC = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.email === 'shahabdulmazid.ezan@yahoo.com';
+
   const [copiedCvId, setCopiedCvId] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'experience' | 'projects' | 'publications' | 'skills' | 'education'>('overview');
@@ -282,6 +286,53 @@ export const ResumePage: React.FC = () => {
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2000);
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="space-y-6 w-full max-w-full pb-10 text-left">
+        <div className="card p-6 sm:p-8 rounded-3xl bg-[#141224] border border-zinc-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-purple-600/30 flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
+              >
+                {user?.full_name ? user.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'GC'}
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl sm:text-2xl font-extrabold text-white">{user?.full_name || 'Guest Candidate'}</h1>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 uppercase">
+                    {user?.role === 'user' ? 'Candidate Account' : 'Guest Account'}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400">{user?.email || 'guest@careertrack.bd'}</p>
+                {user?.phone && <p className="text-[11px] font-mono text-zinc-500">{user.phone}</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8 sm:p-12 rounded-3xl bg-[#121020] border border-dashed border-zinc-800 text-center space-y-4 max-w-2xl mx-auto my-8">
+          <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto">
+            <FileText className="w-7 h-7" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-bold text-white">No Applications or CV Records Synced</h3>
+            <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+              You haven't submitted any job applications yet. All candidate data remains empty until you add an application or upload an application PDF.
+            </p>
+          </div>
+          <div className="pt-2">
+            <span className="inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl bg-purple-600/20 text-purple-300 border border-purple-500/30">
+              <ShieldCheck className="w-4 h-4 text-purple-400" />
+              <span>Candidate Privacy: Isolated &amp; Empty</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 w-full max-w-full pb-10">

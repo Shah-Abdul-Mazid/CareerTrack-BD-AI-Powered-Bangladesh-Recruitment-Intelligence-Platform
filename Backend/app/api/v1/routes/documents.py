@@ -19,10 +19,26 @@ import time
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple
 
-from fastapi import APIRouter, File, UploadFile, Form, Request
+from fastapi import APIRouter, File, UploadFile, Form, Request, Header
 from pydantic import BaseModel
+from app.core.security import decode_access_token
 
 router = APIRouter()
+
+ADMIN_EMAILS = {"shahabdulmazid.ezan@yahoo.com", "admin@careertrack.bd"}
+
+
+def _is_admin(authorization: Optional[str]) -> bool:
+    if not authorization or not authorization.startswith("Bearer "):
+        return False
+    raw_token = authorization.split("Bearer ", 1)[1].strip()
+    decoded = decode_access_token(raw_token)
+    if not decoded:
+        return False
+    role = str(decoded.get("role", "")).strip().lower()
+    email = str(decoded.get("sub", "")).strip().lower()
+    return role == "admin" or email in ADMIN_EMAILS
+
 
 # ── Upload directory ──────────────────────────────────────────────────────────
 if os.environ.get("VERCEL"):
@@ -765,7 +781,9 @@ async def get_uploaded_file(filename: str):
     response_model=List[DocumentItemResponse],
     summary="List uploaded recruitment documents",
 )
-async def list_documents(category: Optional[str] = None):
+async def list_documents(category: Optional[str] = None, authorization: Optional[str] = Header(None)):
+    if not _is_admin(authorization):
+        return []
     docs = _load_docs()
     if category:
         cat_lower = category.lower().strip()

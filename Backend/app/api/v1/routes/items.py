@@ -16,10 +16,50 @@ import json
 from datetime import datetime, timezone
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query, status, File, UploadFile
+from fastapi import APIRouter, HTTPException, Query, status, File, UploadFile, Header
 from pydantic import BaseModel
+from app.core.security import decode_access_token
 
 router = APIRouter()
+
+ADMIN_EMAILS = {"shahabdulmazid.ezan@yahoo.com", "admin@careertrack.bd"}
+
+
+def _get_current_user_from_header(authorization: Optional[str]) -> Optional[dict]:
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    raw_token = authorization.split("Bearer ", 1)[1].strip()
+    return decode_access_token(raw_token)
+
+
+def _is_admin_user(user: Optional[dict]) -> bool:
+    if not user:
+        return False
+    role = str(user.get("role", "")).strip().lower()
+    email = str(user.get("sub", "")).strip().lower()
+    return role == "admin" or email in ADMIN_EMAILS
+
+
+def _scope_apps_for_user(apps: list[dict], user: Optional[dict]) -> list[dict]:
+    if _is_admin_user(user):
+        # Admin can view all admin applications (Shah Abdul Mazid / seed items)
+        return [
+            a for a in apps
+            if not a.get("owner_email")
+            or str(a.get("owner_email", "")).lower() in ADMIN_EMAILS
+            or a.get("applicant_name") == "Shah Abdul Mazid"
+        ]
+    elif user and user.get("sub"):
+        # Normal candidate sees ONLY their own created applications!
+        user_email = str(user.get("sub", "")).strip().lower()
+        return [
+            a for a in apps
+            if str(a.get("owner_email", "")).strip().lower() == user_email
+        ]
+    else:
+        # Explore as Guest / unauthenticated visitor: 0 applications, completely empty!
+        return []
+
 
 # ── Storage Helpers (MongoDB Atlas with File Fallback) ────────────────────────
 if os.environ.get("VERCEL"):
@@ -292,15 +332,26 @@ ApplicationUpdate.model_rebuild()
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.post("/clean", summary="Clean all applications and reset database to empty")
-async def clean_database():
-    """Wipes all applications so user can start from a completely clean slate."""
-    _save_apps([])
-    return {"status": "ok", "message": "Database cleaned successfully. 0 applications remaining."}
+async def clean_database(authorization: Optional[str] = Header(None)):
+    """Wipes applications so user can start from a completely clean slate."""
+    user = _get_current_user_from_header(authorization)
+    apps = _load_apps()
+    if _is_admin_user(user):
+        _save_apps([])
+        return {"status": "ok", "message": "Admin applications cleaned successfully. 0 applications remaining."}
+    elif user and user.get("sub"):
+        user_email = str(user.get("sub", "")).strip().lower()
+        remaining = [a for a in apps if str(a.get("owner_email", "")).strip().lower() != user_email]
+        _save_apps(remaining)
+        return {"status": "ok", "message": "Candidate applications cleaned successfully."}
+    return {"status": "ok", "message": "Guest database reset."}
 
 
 @router.get("/stats", summary="Dashboard statistics")
-async def get_stats():
-    apps = _load_apps()
+async def get_stats(authorization: Optional[str] = Header(None)):
+    user = _get_current_user_from_header(authorization)
+    all_apps = _load_apps()
+    apps = _scope_apps_for_user(all_apps, user)
     total = len(apps)
 
     submitted = sum(1 for a in apps if a.get("status") in ("Submitted", "Applied", "Draft"))
@@ -353,8 +404,10 @@ async def get_stats():
 
 
 @router.get("/meta/organizations", summary="Distinct organizations for filter dropdown")
-async def get_organizations():
-    apps = _load_apps()
+async def get_organizations(authorization: Optional[str] = Header(None)):
+    user = _get_current_user_from_header(authorization)
+    all_apps = _load_apps()
+    apps = _scope_apps_for_user(all_apps, user)
     orgs = sorted({a["organization_name"] for a in apps if a.get("organization_name")})
     return {"organizations": orgs}
 
@@ -402,8 +455,11 @@ async def list_applications(
     page_size:    int           = Query(50,    ge=1, le=100),
     sort_by:      Optional[str] = Query(None),
     sort_order:   str           = Query("desc"),
+    authorization: Optional[str] = Header(None),
 ):
-    apps = _load_apps()
+    user = _get_current_user_from_header(authorization)
+    all_apps = _load_apps()
+    apps = _scope_apps_for_user(all_apps, user)
 
     if search:
         q = search.lower()
@@ -446,14 +502,18 @@ async def list_applications(
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, summary="Create or Merge/Upgrade Application")
-async def create_application(payload: ApplicationCreate):
+async def create_application(payload: ApplicationCreate, authorization: Optional[str] = Header(None)):
     """
     Creates a new application or, if a matching 'Submitted' entry exists
     (matched by Tracking ID, User ID, Job ID, or normalized Org + Post),
     upgrades that entry to 'Admit Available' and merges details without duplicating!
     """
+    user = _get_current_user_from_header(authorization)
+    user_email = str(user.get("sub", "")).strip().lower() if user else "guest@careertrack.bd"
+
     apps = _load_apps()
     new_data = payload.model_dump()
+    new_data["owner_email"] = user_email
 
     new_tracking = (new_data.get("tracking_id") or "").strip()
     new_user_id = (new_data.get("user_id") or "").strip()
@@ -464,6 +524,10 @@ async def create_application(payload: ApplicationCreate):
     matched_idx = -1
 
     for idx, existing in enumerate(apps):
+        # Match only within the user's applications
+        if str(existing.get("owner_email", "")).strip().lower() != user_email:
+            continue
+
         ex_tracking = (existing.get("tracking_id") or "").strip()
         ex_user_id = (existing.get("user_id") or "").strip()
         ex_job_id = (existing.get("job_id") or "").strip()
@@ -537,8 +601,10 @@ async def create_application(payload: ApplicationCreate):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/{item_id}", summary="Get single application by ID")
-async def get_application(item_id: int):
-    apps = _load_apps()
+async def get_application(item_id: int, authorization: Optional[str] = Header(None)):
+    user = _get_current_user_from_header(authorization)
+    all_apps = _load_apps()
+    apps = _scope_apps_for_user(all_apps, user)
     for a in apps:
         if a.get("id") == item_id:
             return a

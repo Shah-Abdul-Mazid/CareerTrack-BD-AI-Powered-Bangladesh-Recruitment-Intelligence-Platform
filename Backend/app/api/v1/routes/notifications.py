@@ -6,10 +6,26 @@ Frontend calls GET /api/v1/notifications (with .catch(() => []) guard).
 from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 from pydantic import BaseModel
+from app.core.security import decode_access_token
 
 router = APIRouter()
+
+ADMIN_EMAILS = {"shahabdulmazid.ezan@yahoo.com", "admin@careertrack.bd"}
+
+
+def _is_admin(authorization: Optional[str]) -> bool:
+    if not authorization or not authorization.startswith("Bearer "):
+        return False
+    raw_token = authorization.split("Bearer ", 1)[1].strip()
+    decoded = decode_access_token(raw_token)
+    if not decoded:
+        return False
+    role = str(decoded.get("role", "")).strip().lower()
+    email = str(decoded.get("sub", "")).strip().lower()
+    return role == "admin" or email in ADMIN_EMAILS
+
 
 _notifications: list[dict] = [
     {
@@ -35,7 +51,9 @@ _notif_next_id = 3
 
 
 @router.get("", summary="List notifications")
-async def list_notifications():
+async def list_notifications(authorization: Optional[str] = Header(None)):
+    if not _is_admin(authorization):
+        return []
     return sorted(_notifications, key=lambda n: n["created_at"], reverse=True)
 
 

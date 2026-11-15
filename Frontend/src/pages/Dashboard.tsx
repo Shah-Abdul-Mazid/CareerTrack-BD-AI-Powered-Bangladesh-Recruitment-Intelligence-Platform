@@ -84,6 +84,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const examCount = stats?.upcoming_exams_count ?? 0;
   const rejectedCount = stats?.rejected_count ?? 0;
 
+  // Active trend responsive to user application count
+  const displayActivityTrend = totalApps > 0
+    ? ACTIVITY_TREND
+    : ACTIVITY_TREND.map(d => ({ ...d, apps: 0 }));
+
   // Donut chart — built from live status_distribution
   const categoryData = stats?.status_distribution?.length
     ? stats.status_distribution.map((s, i) => ({
@@ -91,7 +96,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         count: s.count,
         color: DONUT_COLORS[i % DONUT_COLORS.length],
       }))
-    : [{ name: 'No data yet', count: 1, color: '#3f3f46' }];
+    : [{ name: 'No applications', count: 0, color: '#3f3f46' }];
 
   return (
     <div className="space-y-6">
@@ -136,9 +141,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="my-3 flex items-baseline justify-between">
             <span className="text-2xl sm:text-3xl font-extrabold text-white">{totalApps}</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> +12.67%
-            </span>
+            {totalApps > 0 ? (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-0.5">
+                <TrendingUp className="w-3 h-3" /> +12.67%
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-zinc-850 text-zinc-500 border border-zinc-800">
+                0%
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-zinc-500">Total active job applications</p>
         </div>
@@ -151,9 +162,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="my-3 flex items-baseline justify-between">
             <span className="text-2xl sm:text-3xl font-extrabold text-white">{submittedCount}</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-0.5">
-              <TrendingDown className="w-3 h-3" /> -2.4%
-            </span>
+            {submittedCount > 0 ? (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-0.5">
+                <TrendingDown className="w-3 h-3" /> -2.4%
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-zinc-850 text-zinc-500 border border-zinc-800">
+                0%
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-zinc-500">Pipeline in submission review</p>
         </div>
@@ -166,9 +183,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="my-3 flex items-baseline justify-between">
             <span className="text-2xl sm:text-3xl font-extrabold text-amber-400">{examCount}</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> +12.67%
-            </span>
+            {examCount > 0 ? (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-0.5">
+                <TrendingUp className="w-3 h-3" /> +12.67%
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-zinc-850 text-zinc-500 border border-zinc-800">
+                0%
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-zinc-500">{examCount > 0 ? `${examCount} upcoming exam(s)` : 'No confirmed exams'}</p>
         </div>
@@ -207,7 +230,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="h-52 w-full mt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={ACTIVITY_TREND} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+              <AreaChart data={displayActivityTrend} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                 <defs>
                   <linearGradient id="sneatBlueWave" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.6} />
@@ -235,7 +258,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex items-center justify-between pt-3 border-t border-zinc-800/80 text-[11px] text-zinc-400">
-            <span>Peak Application Velocity: <b>65 / day</b></span>
+            <span>Peak Application Velocity: <b>{totalApps > 0 ? '65 / day' : '0 / day'}</b></span>
             <span className="text-purple-400 font-semibold cursor-pointer hover:underline" onClick={onNavigateToApplications}>View all</span>
           </div>
         </div>
@@ -316,9 +339,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="text-center my-2">
-            <div className="text-3xl font-extrabold text-white">100%</div>
+            <div className="text-3xl font-extrabold text-white">{totalApps > 0 ? '100%' : '0%'}</div>
             <p className="text-[11px] text-zinc-400 mt-1 max-w-[200px] mx-auto leading-tight">
-              All applications verified with official circulars and notices.
+              {totalApps > 0 ? 'All applications verified with official circulars and notices.' : 'No active recruitment applications registered yet.'}
             </p>
           </div>
 
