@@ -41,7 +41,14 @@ export const ResumePage: React.FC = () => {
       { label: 'Published Research', value: '2 Papers', desc: 'IEEE ICCIT 2025 & Springer ICIDA 2026', icon: BookOpen, color: '#a855f7' },
       { label: 'Enterprise RAG Platform', value: '10K+ Docs', desc: '95%+ semantic retrieval accuracy', icon: Cpu, color: '#3b82f6' },
       { label: 'Specialized Certifications', value: '17+ Badges', desc: 'IBM, AWS & DeepLearning.AI accredited', icon: Award, color: '#10b981' },
-      { label: 'Intelligent Systems Major', value: 'EWU B.Sc.', desc: 'Data Science & Machine Learning core', icon: GraduationCap, color: '#f59e0b' },
+      { 
+        value: 'EWU B.Sc. in Computer Science and Engineering', 
+        label: '', 
+        desc: 'Major : Intelligent System and Data Science', 
+        isDegree: true,
+        icon: GraduationCap, 
+        color: '#f59e0b' 
+      },
     ],
 
     experience: [
@@ -186,7 +193,7 @@ export const ResumePage: React.FC = () => {
       {
         degree: 'B.Sc. in Computer Science & Engineering',
         institution: 'East West University (EWU)',
-        major: 'Major: Intelligent Systems & Data Science',
+        major: 'Major : Intelligent System and Data Science',
         period: '2021 – 2026',
         result: 'CGPA 2.56 / 4.00',
         badge: 'Undergraduate'
@@ -431,10 +438,14 @@ export const ResumePage: React.FC = () => {
               >
                 <Icon className="w-5 h-5" />
               </div>
-              <div className="min-w-0">
-                <p className="text-lg sm:text-xl font-extrabold text-white leading-tight font-mono">{h.value}</p>
-                <p className="text-xs font-bold text-zinc-200 mt-0.5 truncate">{h.label}</p>
-                <p className="text-[11px] text-zinc-400 truncate mt-0.5">{h.desc}</p>
+              <div className="min-w-0 flex-1">
+                <p className={`${(h as any).isDegree ? 'text-xs sm:text-sm font-bold' : 'text-lg sm:text-xl font-extrabold font-mono'} text-white leading-snug`}>
+                  {h.value}
+                </p>
+                {h.label && (
+                  <p className="text-xs font-bold text-zinc-200 mt-0.5 truncate">{h.label}</p>
+                )}
+                <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug font-medium">{h.desc}</p>
               </div>
             </div>
           );
