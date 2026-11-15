@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar, NavItemKey } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
+import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { Dashboard } from './pages/Dashboard';
 import { Applications } from './pages/Applications';
 import { ResumePage } from './pages/ResumePage';
@@ -19,6 +20,7 @@ import { ApplicationCreatePayload, DashboardStats } from './types';
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavItemKey>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isGlobalCreateOpen, setIsGlobalCreateOpen] = useState(false);
   const [isBackendConnected, setIsBackendConnected] = useState(true);
@@ -76,24 +78,22 @@ export function App() {
 
   const pageTitles: Record<NavItemKey, string> = {
     dashboard: 'Dashboard',
-    resume: 'Resume & Candidate Profile',
-    applications: 'Application Management',
-    companies: 'Companies & Organizations',
-    interviews: 'Interviews & Examinations',
-    calendar: 'Examination Calendar',
-    'app-upload': 'Application Copy / Submit PDF Upload',
-    'admit-upload': 'Admit Card PDF Upload & Extraction',
-    'seatplan-upload': 'Seat Plan & Exam Schedule PDF Upload',
-    documents: 'Application Copy & Document Upload',
-    assistant: 'AI Recruitment Assistant',
-    notifications: 'Notifications & Alerts',
+    resume: 'Resume Profile',
+    applications: 'Applications Board',
+    companies: 'Companies & Orgs',
+    interviews: 'Interviews & Exams',
+    calendar: 'Exam Calendar',
+    'app-upload': 'Submit PDF Upload',
+    'admit-upload': 'Admit Card Upload',
+    'seatplan-upload': 'Seat Plan & Schedule',
+    documents: 'Document Intelligence',
+    assistant: 'AI Recruitment Coach',
+    notifications: 'Notifications',
   };
 
-  const sidebarWidth = sidebarCollapsed ? 72 : 240;
-
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
-      {/* Sidebar */}
+    <div className="min-h-screen flex flex-col lg:flex-row relative" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+      {/* Sidebar (Desktop permanent + Mobile drawer) */}
       <Sidebar
         currentTab={currentTab}
         onTabChange={(tab) => {
@@ -105,26 +105,30 @@ export function App() {
         }}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        submittedCount={realSubmittedCount || (dashboardStats?.submitted_count ?? 5)}
+        mobileOpen={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
+        submittedCount={realSubmittedCount || (dashboardStats?.submitted_count ?? 0)}
         admitCount={realAdmitCount}
         pendingSeatPlanCount={pendingSeatPlanCount}
-        totalApplicationsCount={dashboardStats?.total_applications ?? 6}
+        totalApplicationsCount={dashboardStats?.total_applications ?? 0}
       />
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div
-        className="flex flex-col flex-1 min-h-screen transition-all duration-300"
-        style={{ marginLeft: `${sidebarWidth}px` }}
+        className={`flex flex-col flex-1 min-h-screen w-full transition-all duration-300 ${
+          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[240px]'
+        }`}
       >
         <Header
           pageTitle={pageTitles[currentTab]}
           onNewApplication={() => setIsGlobalCreateOpen(true)}
           onOpenNotifications={() => setIsNotificationsOpen(true)}
+          onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           isBackendConnected={isBackendConnected}
         />
 
-        <main className="flex-1 overflow-auto page-enter" style={{ background: 'var(--bg-base)' }}>
-          <div className="p-6 max-w-screen-2xl mx-auto">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto page-enter pb-24 lg:pb-8" style={{ background: 'var(--bg-base)' }}>
+          <div className="p-3.5 sm:p-5 lg:p-6 max-w-screen-2xl mx-auto">
             {currentTab === 'dashboard' && (
               <Dashboard
                 onNavigateToApplications={() => setCurrentTab('applications')}
@@ -148,6 +152,23 @@ export function App() {
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar (< lg only) */}
+      <MobileBottomNav
+        currentTab={currentTab}
+        onTabChange={(tab) => {
+          if (tab === 'notifications') {
+            setIsNotificationsOpen(true);
+          } else {
+            setCurrentTab(tab);
+          }
+        }}
+        onOpenMenu={() => setIsMobileMenuOpen(true)}
+        totalApplicationsCount={dashboardStats?.total_applications ?? 0}
+        submittedCount={realSubmittedCount}
+        admitCount={realAdmitCount}
+        pendingSeatPlanCount={pendingSeatPlanCount}
+      />
 
       {/* Modals */}
       <ApplicationModal

@@ -97,27 +97,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="space-y-6">
 
       {/* ── Top Header Banner (Klinch Supercharged Style) ── */}
-      <div className="relative overflow-hidden rounded-2xl p-6 sm:p-7 border border-purple-500/20 bg-gradient-to-r from-purple-950/40 via-zinc-900/80 to-zinc-950 shadow-2xl">
+      <div className="relative overflow-hidden rounded-2xl p-4 sm:p-7 border border-purple-500/20 bg-gradient-to-r from-purple-950/40 via-zinc-900/80 to-zinc-950 shadow-2xl">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
               Your job search, supercharged.
             </h1>
             <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
               Track applications, admit cards, and confirmed exam seat plans across all Bangladesh banks &amp; government portals.
             </p>
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-shrink-0">
             <button
               onClick={() => setIsSeatPlanOpen(true)}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-600/30 transition-all flex items-center gap-1.5"
+              className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-600/30 transition-all flex items-center gap-1.5 flex-1 sm:flex-initial justify-center"
             >
               <FileSpreadsheet className="w-4 h-4 text-purple-200" />
               <span>Exam Seat Plan</span>
             </button>
             <button
               onClick={onOpenNewApplication}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-white/10 hover:bg-white/15 border border-white/10 transition-all flex items-center gap-1.5"
+              className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold text-white bg-white/10 hover:bg-white/15 border border-white/10 transition-all flex items-center gap-1.5 flex-1 sm:flex-initial justify-center"
             >
               <Plus className="w-4 h-4 text-zinc-300" />
               <span>+ Add Application</span>
@@ -127,7 +127,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* ── 4 Top KPI Cards (Sneat Pixel-Perfect Layout) ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Application */}
         <div className="card p-4 sm:p-5 flex flex-col justify-between" style={{ background: '#121217', border: '1px solid #1f1f28' }}>
           <div className="flex items-center justify-between">

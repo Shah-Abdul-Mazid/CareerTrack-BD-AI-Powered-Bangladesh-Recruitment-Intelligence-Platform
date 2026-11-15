@@ -212,7 +212,7 @@ export const AdmitCardPage: React.FC = () => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 {[
                   { icon: Building,     label: 'Organization', value: extracted.organization_name || '—' },
                   { icon: FileText,     label: 'Post',         value: extracted.post_name || '—' },

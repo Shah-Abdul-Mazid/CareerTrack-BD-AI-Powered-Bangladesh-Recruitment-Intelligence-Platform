@@ -176,13 +176,16 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
       {/* ── Upcoming Confirmed Exam Callout Banner ── */}
       {(() => {
         const examApp = applications.find(
-          a => a.status === 'Exam Scheduled' || (a.examinations && a.examinations.length > 0) || a.job_id === '26101'
+          a => a.status === 'Exam Scheduled' || (a.examinations && a.examinations.length > 0)
         );
         if (!examApp) return null;
-        const rollDisplay = examApp.roll_number && examApp.roll_number !== 'Awaiting' ? examApp.roll_number : '116683';
-        const trackingDisplay = examApp.tracking_id || '26101-2052062-208657';
-        const centerDisplay = examApp.examinations?.[0]?.center_name || 'Shamsul Hoque Khan School & College (School Campus), Matuail, Jatrabari, Dhaka';
-        const examTimeDisplay = examApp.examinations?.[0]?.start_time ? `${examApp.examinations[0].start_time} – ${examApp.examinations[0].end_time}` : '03:00 PM – 04:00 PM';
+        const rollDisplay = examApp.roll_number && examApp.roll_number !== 'Awaiting' ? examApp.roll_number : null;
+        const trackingDisplay = examApp.tracking_id || null;
+        const centerDisplay = examApp.examinations?.[0]?.center_name || (examApp as any).center_name || null;
+        const examTimeDisplay = examApp.examinations?.[0]?.start_time ? `${examApp.examinations[0].start_time} – ${examApp.examinations[0].end_time}` : ((examApp as any).exam_time || null);
+        const examDateDisplay = examApp.examinations?.[0]?.exam_date || (examApp as any).exam_date || null;
+        const reportTime = examApp.examinations?.[0]?.reporting_time || null;
+        if (!centerDisplay && !examDateDisplay) return null;
 
         return (
           <div className="p-4 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-transparent flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
@@ -196,7 +199,7 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
                     EXAM CONFIRMED
                   </span>
                   <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Friday, Nov 13, 2026
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {examDateDisplay || 'Date Confirmed'}
                   </span>
                 </div>
                 <h3 className="text-sm font-bold text-white mt-1">
@@ -204,17 +207,23 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
                 </h3>
                 <div className="text-xs text-zinc-300 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
                   <span className="text-amber-300 font-semibold flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" /> {examTimeDisplay} (Report by 02:00 PM)
+                    <Clock className="w-3.5 h-3.5" /> {examTimeDisplay}{reportTime ? ` (Report by ${reportTime})` : ''}
                   </span>
+                  {centerDisplay && (
                   <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-rose-400" /> Centre #3: {centerDisplay}
+                    <MapPin className="w-3.5 h-3.5 text-rose-400" /> {centerDisplay}
                   </span>
+                  )}
+                  {rollDisplay && (
                   <span className="font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                     Roll: {rollDisplay}
                   </span>
+                  )}
+                  {trackingDisplay && (
                   <span className="font-mono text-zinc-400 text-[11px]">
                     Track: {trackingDisplay}
                   </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -222,7 +231,7 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setSeatPlanRoll(parseInt(rollDisplay, 10) || 116683);
+                  setSeatPlanRoll(parseInt(rollDisplay || '116683', 10) || 116683);
                   setIsSeatPlanOpen(true);
                 }}
                 className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 transition-colors flex items-center gap-1.5 shadow-sm"
@@ -246,7 +255,7 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
       })()}
 
       {/* ── Status KPI Bar (My Board top counters) ── */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         {[
           { label: 'Total', value: total, key: 'All', color: '#9492a8', bg: 'rgba(148,146,168,0.12)' },
           { label: 'Submitted', value: counts['Submitted'] || 0, key: 'Submitted', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
@@ -262,17 +271,16 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
                 setStatusFilter(statusFilter === s.key ? 'All' : s.key);
                 setPage(1);
               }}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all hover:scale-[1.02]"
+              className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl cursor-pointer transition-all hover:scale-[1.02] active:scale-95 flex-1 sm:flex-initial min-w-[75px]"
               style={{
                 background: s.bg,
                 border: isActive && s.key !== 'All' ? `2px solid ${s.color}` : `1px solid ${s.color}22`,
-                minWidth: '90px'
               }}
               title={`Click to filter by ${s.label}`}
             >
               <div>
-                <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
-                <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{s.label}</p>
+                <p className="text-xl sm:text-2xl font-bold leading-tight" style={{ color: s.color }}>{s.value}</p>
+                <p className="text-[11px] sm:text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{s.label}</p>
               </div>
             </div>
           );
@@ -280,8 +288,8 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
       </div>
 
       {/* ── Search + Filter Bar ── */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px]">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+        <div className="relative flex-1 min-w-0">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
           <input type="text" value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -289,17 +297,17 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
             className="input-dark pl-9 w-full" />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
           <Filter className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
           <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="input-dark py-2 text-sm pr-8"
-            style={{ minWidth: '160px', appearance: 'none', paddingRight: '2rem', cursor: 'pointer' }}>
+            className="input-dark py-2 text-xs sm:text-sm pr-7 flex-1 sm:flex-initial"
+            style={{ minWidth: '130px', appearance: 'none', cursor: 'pointer' }}>
             {STATUS_FILTERS.map((s) => <option key={s} value={s}>Stage: {s}</option>)}
           </select>
 
           {orgOptions.length > 0 && (
             <select value={orgFilter} onChange={(e) => { setOrgFilter(e.target.value); setPage(1); }}
-              className="input-dark py-2 text-sm"
+              className="input-dark py-2 text-xs sm:text-sm flex-1 sm:flex-initial"
               style={{ maxWidth: '160px', appearance: 'none', cursor: 'pointer' }}>
               <option value="All">Org: All</option>
               {orgOptions.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -326,7 +334,7 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
       ) : viewMode === 'board' ? (
 
         /* ── KANBAN BOARD (My Board style) ── */
-        <div className="flex gap-4 overflow-x-auto pb-6 pt-1">
+        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-6 pt-1 snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
           {BOARD_COLUMNS.map((col) => {
             const colApps = applications.filter((a) => {
               if (col.key === 'Submitted') {
@@ -342,7 +350,7 @@ export const Applications: React.FC<ApplicationsPageProps> = ({
               return a.status === col.key;
             });
             return (
-              <div key={col.key} className="w-72 flex-shrink-0 flex flex-col max-h-[calc(100vh-280px)]">
+              <div key={col.key} className="w-[82vw] sm:w-72 flex-shrink-0 flex flex-col max-h-[calc(100vh-260px)] snap-start">
                 {/* Column header */}
                 <div className="flex items-center justify-between px-1 pb-3">
                   <div className="flex items-center gap-2">

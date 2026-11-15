@@ -261,7 +261,7 @@ export const DocumentsPage: React.FC = () => {
               )}
 
               {/* Extracted Fields Table (Editable for human verification) */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 text-xs">
                 <div className="p-3 rounded-xl" style={{ background: 'var(--bg-base)', border: '1px solid var(--border)' }}>
                   <span className="text-[10px] font-bold uppercase block" style={{ color: 'var(--text-muted)' }}>Organization</span>
                   <input
