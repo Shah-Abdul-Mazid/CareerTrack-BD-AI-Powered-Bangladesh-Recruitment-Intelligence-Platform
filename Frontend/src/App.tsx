@@ -15,10 +15,13 @@ import { AssistantPage } from './pages/AssistantPage';
 import { NotificationsDrawer } from './components/layout/NotificationsDrawer';
 import { ApplicationModal } from './components/applications/ApplicationModal';
 import { AuthModal } from './components/auth/AuthModal';
+import { AuthPage } from './pages/AuthPage';
+import { useAuth } from './context/AuthContext';
 import { api } from './services/api';
 import { ApplicationCreatePayload, DashboardStats } from './types';
 
 export function App() {
+  const { isAuthenticated, isLoading, continueAsGuest } = useAuth();
   const [currentTab, setCurrentTab] = useState<NavItemKey>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -91,6 +94,26 @@ export function App() {
     assistant: 'AI Recruitment Coach',
     notifications: 'Notifications',
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center" style={{ background: '#090714' }}>
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg text-white shadow-lg shadow-purple-600/30 animate-pulse"
+            style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
+          >
+            CT
+          </div>
+          <div className="text-sm font-semibold text-zinc-400">Loading CareerTrack BD...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthPage onContinueAsGuest={continueAsGuest} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row relative" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>

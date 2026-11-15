@@ -16,11 +16,12 @@ interface AuthContextType {
   verifyOtp: (email: string, otp: string, purpose: 'signup' | 'login') => Promise<AuthResponse>;
   resendOtp: (email: string, purpose: 'signup' | 'login') => Promise<AuthResponse>;
   logout: () => Promise<void>;
+  continueAsGuest: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEFAULT_ADMIN_USER: AuthUser = {
+export const DEFAULT_ADMIN_USER: AuthUser = {
   id: 1,
   full_name: 'Shah Abdul Mazid',
   email: 'shahabdulmazid.ezan@yahoo.com',
@@ -31,9 +32,9 @@ const DEFAULT_ADMIN_USER: AuthUser = {
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(DEFAULT_ADMIN_USER);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
@@ -50,18 +51,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setUser(res.user);
             setIsAuthenticated(true);
           } else {
-            // Keep default user profile
-            setUser(DEFAULT_ADMIN_USER);
-            setIsAuthenticated(true);
+            localStorage.removeItem('careertrack_auth_token');
+            setToken(null);
+            setUser(null);
+            setIsAuthenticated(false);
           }
         } catch {
-          setUser(DEFAULT_ADMIN_USER);
-          setIsAuthenticated(true);
+          // If network error, clear invalid session
+          localStorage.removeItem('careertrack_auth_token');
+          setToken(null);
+          setUser(null);
+          setIsAuthenticated(false);
         }
       } else {
-        // Fallback default logged-in profile
-        setUser(DEFAULT_ADMIN_USER);
-        setIsAuthenticated(true);
+        // No saved token — display the initial Login / Sign Up portal
+        setUser(null);
+        setIsAuthenticated(false);
       }
       setIsLoading(false);
     };
@@ -106,8 +111,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return await api.resendOtp({ email, purpose });
   };
 
+  const continueAsGuest = () => {
+    setUser({
+      id: 0,
+      full_name: 'Guest Candidate',
+      email: 'guest@careertrack.bd',
+      phone: '+880 1500000000',
+      role: 'candidate',
+      is_verified: false,
+      created_at: new Date().toISOString(),
+    });
+    setIsAuthenticated(true);
+  };
+
   const logout = async () => {
-    await api.logout();
+    try {
+      await api.logout();
+    } catch {}
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
@@ -130,6 +150,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         verifyOtp,
         resendOtp,
         logout,
+        continueAsGuest,
       }}
     >
       {children}
