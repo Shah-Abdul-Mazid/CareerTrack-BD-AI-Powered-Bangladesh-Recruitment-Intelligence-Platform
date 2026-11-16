@@ -88,18 +88,21 @@ def send_otp_email(to_email: str, otp: str, purpose: str = "verification") -> di
             smtp_port = int(os.getenv("SMTP_PORT", str(SMTP_PORT)))
             clean_pass = smtp_pass.replace(" ", "")
 
-            if smtp_port == 465:
-                with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
+            # Try SMTP_SSL on 465 first (most reliable on cloud/serverless), fallback to 587 STARTTLS
+            try:
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
                     server.login(smtp_user, clean_pass)
                     server.sendmail(smtp_user, [to_email], msg.as_string())
-            else:
-                with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                logger.info(f"[Email:SMTP_SSL] Dispatched OTP to {to_email}")
+                return {"status": "sent", "provider": "smtp_ssl", "to": to_email}
+            except Exception as ssl_err:
+                logger.warning(f"[Email:SMTP_SSL] Failed, trying STARTTLS: {ssl_err}")
+                with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
                     server.starttls()
                     server.login(smtp_user, clean_pass)
                     server.sendmail(smtp_user, [to_email], msg.as_string())
-
-            logger.info(f"[Email:SMTP] Dispatched OTP to {to_email}")
-            return {"status": "sent", "provider": "smtp", "to": to_email}
+                logger.info(f"[Email:SMTP_STARTTLS] Dispatched OTP to {to_email}")
+                return {"status": "sent", "provider": "smtp_starttls", "to": to_email}
         except Exception as e:
             logger.error(f"[Email:SMTP] Failed: {e}")
 
