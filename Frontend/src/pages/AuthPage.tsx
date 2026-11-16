@@ -543,7 +543,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      placeholder="12–16 characters (e.g. Nova#Jade7Star)"
+                      placeholder="8–30 characters (e.g. Nova#Jade7Star)"
                       required
                       className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-zinc-900/90 border border-zinc-700/80 text-white text-xs placeholder:text-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                     />
@@ -656,7 +656,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
-                      placeholder="12–16 characters (e.g. Nova#Jade7Star)"
+                      placeholder="8–30 characters (e.g. Nova#Jade7Star)"
                       required
                       className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-zinc-900/90 border border-zinc-700/80 text-white text-xs placeholder:text-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                     />

@@ -427,7 +427,7 @@ export const AuthModal: React.FC = () => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="12–16 characters (e.g. Nova#Jade7Star)"
+                    placeholder="8–30 characters (e.g. Nova#Jade7Star)"
                     className="input-dark pl-9 pr-9 w-full text-xs sm:text-sm py-2"
                   />
                   <button
@@ -565,7 +565,7 @@ export const AuthModal: React.FC = () => {
                     required
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="12–16 characters (e.g. Nova#Jade7Star)"
+                    placeholder="8–30 characters (e.g. Nova#Jade7Star)"
                     className="input-dark pl-9 pr-9 w-full text-xs sm:text-sm py-2"
                   />
                   <button

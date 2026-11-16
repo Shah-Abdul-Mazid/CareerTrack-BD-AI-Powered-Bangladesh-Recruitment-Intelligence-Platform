@@ -27,9 +27,8 @@ export interface PasswordPolicyConfig {
  * simply change minLength and maxLength below:
  */
 export const PASSWORD_CONFIG: PasswordPolicyConfig = {
-  // Primary Rule: 12 to 30 characters
-  // (Change to minLength: 6, maxLength: 12 if shorter mode is required)
-  minLength: 12,
+  // Primary Rule: 8 to 30 characters
+  minLength: 8,
   maxLength: 30,
   requireUppercase: true,
   requireLowercase: true,
