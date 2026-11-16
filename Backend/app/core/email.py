@@ -62,18 +62,48 @@ def _build_html_template(otp: str, purpose: str) -> str:
 
 def send_otp_email(to_email: str, otp: str, purpose: str = "verification") -> dict:
     """
-    Sends 6-digit OTP code to the recipient's email address.
-    Tries Resend API first (ideal for Vercel/cloud), then SMTP.
+    Sends 6-digit OTP code to any candidate's email address.
+    Prioritizes Gmail SMTP (which allows sending to ANY recipient in the world),
+    with Resend API as a fallback.
     """
+    smtp_user = (os.getenv("SMTP_USER") or os.getenv("GMAIL_APP_EMAIL") or SMTP_USER).strip()
+    smtp_pass = (os.getenv("SMTP_PASS") or os.getenv("GMAIL_APP_PASSWORD") or SMTP_PASS).strip()
     resend_key = os.getenv("RESEND_API_KEY", RESEND_API_KEY).strip()
-    smtp_user = os.getenv("SMTP_USER", SMTP_USER).strip()
-    smtp_pass = os.getenv("SMTP_PASS", SMTP_PASS).strip()
 
     subject = f"CareerTrack BD OTP: {otp} — Security Verification"
     html_body = _build_html_template(otp, purpose)
     text_body = f"Your CareerTrack BD verification OTP is: {otp}. Valid for 10 minutes."
 
-    # 1. Try Resend API (Recommended for Cloud / Serverless)
+    # 1. Prefer Gmail SMTP (supports sending to ANY user email address without domain limits)
+    if smtp_user and smtp_pass:
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"CareerTrack BD <{smtp_user}>"
+            msg["To"] = to_email
+            msg.attach(MIMEText(text_body, "plain"))
+            msg.attach(MIMEText(html_body, "html"))
+
+            smtp_host = os.getenv("SMTP_HOST", SMTP_HOST).strip()
+            smtp_port = int(os.getenv("SMTP_PORT", str(SMTP_PORT)))
+            clean_pass = smtp_pass.replace(" ", "")
+
+            if smtp_port == 465:
+                with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
+                    server.login(smtp_user, clean_pass)
+                    server.sendmail(smtp_user, [to_email], msg.as_string())
+            else:
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                    server.starttls()
+                    server.login(smtp_user, clean_pass)
+                    server.sendmail(smtp_user, [to_email], msg.as_string())
+
+            logger.info(f"[Email:SMTP] Dispatched OTP to {to_email}")
+            return {"status": "sent", "provider": "smtp", "to": to_email}
+        except Exception as e:
+            logger.error(f"[Email:SMTP] Failed: {e}")
+
+    # 2. Resend API Fallback
     if resend_key:
         try:
             req_data = json.dumps({
@@ -100,19 +130,6 @@ def send_otp_email(to_email: str, otp: str, purpose: str = "verification") -> di
                 return {"status": "sent", "provider": "resend", "id": res.get("id"), "to": to_email}
         except Exception as e:
             logger.error(f"[Email:Resend] Failed: {e}")
-
-    # 2. Try Standard SMTP (Gmail, Yahoo, Outlook)
-    if smtp_user and smtp_pass:
-        try:
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = f"CareerTrack BD <{smtp_user}>"
-            msg["To"] = to_email
-            msg.attach(MIMEText(text_body, "plain"))
-            msg.attach(MIMEText(html_body, "html"))
-
-            smtp_host = os.getenv("SMTP_HOST", SMTP_HOST).strip()
-            smtp_port = int(os.getenv("SMTP_PORT", str(SMTP_PORT)))
 
             if smtp_port == 465:
                 with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
