@@ -63,13 +63,13 @@ def send_sms(to_phone: str, message: str) -> dict:
         logger.warning("[SMS] Twilio Account SID (AC...) not configured. Skipping SMS.")
         return {"status": "skipped", "reason": "Twilio Account SID (AC...) not configured."}
 
-    # Determine credentials
-    if api_key_sid and api_secret:
-        user_cred = api_key_sid
-        pass_cred = api_secret
-    elif auth_token:
+    # Determine credentials (prefer Main Auth Token for full SMS permission)
+    if auth_token:
         user_cred = account_sid
         pass_cred = auth_token
+    elif api_key_sid and api_secret:
+        user_cred = api_key_sid
+        pass_cred = api_secret
     else:
         logger.warning("[SMS] Neither Auth Token nor API Key Secret configured. Skipping SMS.")
         return {"status": "skipped", "reason": "No Twilio credentials configured."}

@@ -90,6 +90,7 @@ def send_otp_email(to_email: str, otp: str, purpose: str = "verification") -> di
                 headers={
                     "Authorization": f"Bearer {resend_key}",
                     "Content-Type": "application/json",
+                    "User-Agent": "resend-python/2.0.0",
                 },
                 method="POST"
             )
