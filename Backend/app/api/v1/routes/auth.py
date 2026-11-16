@@ -26,6 +26,7 @@ from app.core.security import (
     decode_access_token,
 )
 from app.core.sms import send_sms
+from app.core.email import send_otp_email
 
 router = APIRouter()
 
@@ -153,6 +154,18 @@ def _dispatch_otp_sms(phone: Optional[str], otp: str, purpose: str):
         print(f"[SMS] Notice: Could not send SMS: {e}")
 
 
+def _dispatch_otp_notifications(email: str, phone: Optional[str], otp: str, purpose: str):
+    # 1. Send Email (SMTP / Gmail)
+    try:
+        send_otp_email(email, otp, purpose)
+    except Exception as e:
+        print(f"[Email] Notice: Could not send email: {e}")
+
+    # 2. Send SMS (Twilio)
+    if phone:
+        _dispatch_otp_sms(phone, otp, purpose)
+
+
 # ── Auth Endpoints ───────────────────────────────────────────────────────────
 
 @router.post("/signup", summary="Register a new user and dispatch 6-digit OTP")
@@ -219,7 +232,7 @@ async def signup(payload: SignupRequest):
             upsert=True,
         )
 
-    _dispatch_otp_sms(payload.phone, otp, "signup")
+    _dispatch_otp_notifications(email, payload.phone, otp, "signup")
 
     return {
         "status": "otp_sent",
@@ -264,7 +277,7 @@ async def login(payload: LoginRequest):
         )
 
     user_phone = user.get("phone") or ("+880 1531329222" if email in ADMIN_EMAILS else None)
-    _dispatch_otp_sms(user_phone, otp, "login")
+    _dispatch_otp_notifications(email, user_phone, otp, "login")
 
     return {
         "status": "otp_required",
@@ -376,7 +389,7 @@ async def resend_otp(payload: ResendOtpRequest):
 
     user = users_col.find_one({"email": email}) if users_col is not None else None
     user_phone = (user.get("phone") if user else None) or ("+880 1531329222" if email in ADMIN_EMAILS else None)
-    _dispatch_otp_sms(user_phone, otp, purpose)
+    _dispatch_otp_notifications(email, user_phone, otp, purpose)
 
     return {
         "status": "otp_sent",
@@ -421,7 +434,7 @@ async def forgot_password(payload: ForgotPasswordRequest):
         )
 
     user_phone = user.get("phone") or ("+880 1531329222" if email in ADMIN_EMAILS else None)
-    _dispatch_otp_sms(user_phone, otp, "password_reset")
+    _dispatch_otp_notifications(email, user_phone, otp, "password_reset")
 
     return {
         "status": "otp_sent",
