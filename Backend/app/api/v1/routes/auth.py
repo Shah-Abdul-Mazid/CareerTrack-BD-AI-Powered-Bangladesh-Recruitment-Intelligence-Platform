@@ -239,7 +239,6 @@ async def signup(payload: SignupRequest):
         "message": f"A 6-digit verification code has been dispatched for {email}.",
         "email": email,
         "purpose": "signup",
-        "dev_otp": otp,  # Included so verification succeeds smoothly in test & development
         "expires_in_minutes": 10,
     }
 
@@ -284,7 +283,6 @@ async def login(payload: LoginRequest):
         "message": f"Verification required: please enter the 6-digit OTP code sent for {email}.",
         "email": email,
         "purpose": "login",
-        "dev_otp": otp,  # Provided for seamless developer and user sandbox verification
         "expires_in_minutes": 10,
     }
 
@@ -396,7 +394,6 @@ async def resend_otp(payload: ResendOtpRequest):
         "message": f"New OTP code dispatched for {email}.",
         "email": email,
         "purpose": purpose,
-        "dev_otp": otp,
         "expires_in_minutes": 10,
     }
 
@@ -441,7 +438,6 @@ async def forgot_password(payload: ForgotPasswordRequest):
         "message": f"Password reset verification code dispatched for {email}.",
         "email": email,
         "purpose": "password_reset",
-        "dev_otp": otp,
         "expires_in_minutes": 10,
     }
 

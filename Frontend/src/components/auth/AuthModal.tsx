@@ -29,7 +29,6 @@ export const AuthModal: React.FC = () => {
   const [retypePassword, setRetypePassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [devOtp, setDevOtp] = useState<string | null>(null);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -49,7 +48,6 @@ export const AuthModal: React.FC = () => {
       setError(null);
       setSuccessMessage(null);
       setOtp('');
-      setDevOtp(null);
       setNewPassword('');
       setRetypePassword('');
     }
@@ -80,7 +78,6 @@ export const AuthModal: React.FC = () => {
     try {
       const res = await login(email.trim().toLowerCase(), password);
       if (res.status === 'otp_required' || res.status === 'otp_sent') {
-        setDevOtp(res.dev_otp || null);
         setPurpose('login');
         setMode('otp');
         setCountdown(60);
@@ -106,7 +103,6 @@ export const AuthModal: React.FC = () => {
         phone: phone.trim() || undefined,
       });
       if (res.status === 'otp_sent') {
-        setDevOtp(res.dev_otp || null);
         setPurpose('signup');
         setMode('otp');
         setCountdown(60);
@@ -156,9 +152,6 @@ export const AuthModal: React.FC = () => {
       setNewPassword('');
       setRetypePassword('');
       setSuccessMessage(res.message || `Password reset code sent to ${email}.`);
-      if (res.dev_otp) {
-        setDevOtp(res.dev_otp);
-      }
     } catch (err: any) {
       setError(err.message || 'Could not send reset code. Please check your email.');
     } finally {
@@ -195,7 +188,6 @@ export const AuthModal: React.FC = () => {
       setNewPassword('');
       setRetypePassword('');
       setOtp('');
-      setDevOtp(null);
       setMode('login');
     } catch (err: any) {
       setError(err.message || 'Password reset failed. Please check the code.');
@@ -210,7 +202,6 @@ export const AuthModal: React.FC = () => {
     setLoading(true);
     try {
       const res = await resendOtp(email.trim().toLowerCase(), purpose);
-      setDevOtp(res.dev_otp || null);
       setCountdown(60);
       setCanResend(false);
       setSuccessMessage(`New 6-digit verification code sent to ${email}.`);
@@ -526,23 +517,6 @@ export const AuthModal: React.FC = () => {
                 </p>
               </div>
 
-              {/* Dev / Test OTP Helper Card */}
-              {devOtp && (
-                <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-center justify-between">
-                  <div className="text-xs">
-                    <span className="text-zinc-400 block text-[10px] uppercase font-bold">Verification OTP:</span>
-                    <span className="font-mono font-extrabold text-base text-purple-300 tracking-wider">{devOtp}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setOtp(devOtp)}
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-sm flex items-center gap-1 transition-all"
-                  >
-                    <span>Auto-Fill</span>
-                  </button>
-                </div>
-              )}
-
               {/* OTP Input Field */}
               <div className="space-y-1">
                 <label className="text-xs font-bold text-zinc-300">6-Digit Code</label>
@@ -666,23 +640,6 @@ export const AuthModal: React.FC = () => {
                   <span className="block font-mono font-bold text-purple-300 pt-0.5">{email}</span>
                 </p>
               </div>
-
-              {/* Dev / Test OTP Helper Card */}
-              {devOtp && (
-                <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-center justify-between">
-                  <div className="text-xs">
-                    <span className="text-zinc-400 block text-[10px] uppercase font-bold">Verification OTP:</span>
-                    <span className="font-mono font-extrabold text-base text-purple-300 tracking-wider">{devOtp}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setOtp(devOtp)}
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-sm flex items-center gap-1 transition-all"
-                  >
-                    <span>Auto-Fill</span>
-                  </button>
-                </div>
-              )}
 
               {/* OTP Input Field */}
               <div className="space-y-1.5">

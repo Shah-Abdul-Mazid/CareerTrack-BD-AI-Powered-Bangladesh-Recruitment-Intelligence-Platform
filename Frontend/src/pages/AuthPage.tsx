@@ -24,7 +24,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
   const [retypePassword, setRetypePassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [devOtp, setDevOtp] = useState<string | null>(null);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -72,9 +71,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
         setCountdown(60);
         setCanResend(false);
         setSuccessMessage('A 6-digit verification code has been dispatched.');
-        if (res.dev_otp) {
-          setDevOtp(res.dev_otp);
-        }
       } else if (res.access_token) {
         // Logged in directly if OTP was bypassed
       }
@@ -113,9 +109,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
       setCountdown(60);
       setCanResend(false);
       setSuccessMessage('Account created! Please enter the 6-digit OTP code to verify.');
-      if (res.dev_otp) {
-        setDevOtp(res.dev_otp);
-      }
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try another email.');
     } finally {
@@ -165,9 +158,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
       setNewPassword('');
       setRetypePassword('');
       setSuccessMessage(res.message || 'A 6-digit password reset code has been dispatched.');
-      if (res.dev_otp) {
-        setDevOtp(res.dev_otp);
-      }
     } catch (err: any) {
       setError(err.message || 'Could not process password reset. Please check your email.');
     } finally {
@@ -206,7 +196,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
       setNewPassword('');
       setRetypePassword('');
       setOtp('');
-      setDevOtp(null);
       setMode('login');
     } catch (err: any) {
       setError(err.message || 'Password reset failed. Please check the code and try again.');
@@ -224,9 +213,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
       setCountdown(60);
       setCanResend(false);
       setSuccessMessage('Fresh 6-digit OTP dispatched successfully.');
-      if (res.dev_otp) {
-        setDevOtp(res.dev_otp);
-      }
     } catch (err: any) {
       setError(err.message || 'Could not resend OTP. Please try again.');
     } finally {
@@ -427,23 +413,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
               <div className="mt-4 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2 text-left">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-400" />
                 <span>{successMessage}</span>
-              </div>
-            )}
-
-            {/* Quick Helper for Sandbox OTP */}
-            {devOtp && (mode === 'otp' || mode === 'reset') && (
-              <div className="mt-4 p-3 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-between text-left">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-purple-300 block">Verification Code (Auto-Detected)</span>
-                  <span className="text-sm font-mono font-black text-white tracking-widest">{devOtp}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setOtp(devOtp)}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition-all shadow-sm"
-                >
-                  Auto-Fill
-                </button>
               </div>
             )}
 
