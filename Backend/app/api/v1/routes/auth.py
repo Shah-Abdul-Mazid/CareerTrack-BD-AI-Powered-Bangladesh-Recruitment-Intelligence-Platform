@@ -13,20 +13,21 @@ from __future__ import annotations
 import random
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Any
-from fastapi import APIRouter, Depends, HTTPException, Header, status
+from typing import Any, Optional
+
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
+from app.core.email import send_otp_email
 from app.core.security import (
-    verify_password,
-    get_password_hash,
     create_access_token,
     decode_access_token,
+    get_password_hash,
+    verify_password,
 )
 from app.core.sms import send_sms
-from app.core.email import send_otp_email
 
 router = APIRouter()
 

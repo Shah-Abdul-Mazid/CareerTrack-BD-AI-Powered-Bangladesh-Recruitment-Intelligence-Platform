@@ -5,6 +5,8 @@ import {
   Building2, Calendar, FileText, CheckCircle, ChevronRight, Compass
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { validatePassword } from '../utils/passwordPolicy';
+import { PasswordPolicyChecklist } from '../components/auth/PasswordPolicyChecklist';
 
 interface AuthPageProps {
   onContinueAsGuest?: () => void;
@@ -35,6 +37,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
   // Resend countdown
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
+
+  // Real-time password policy validation reports
+  const signupPasswordReport = validatePassword(password, { fullName, email, phone });
+  const resetPasswordReport = validatePassword(newPassword, { email });
 
   useEffect(() => {
     let timer: any;
@@ -90,8 +96,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
       setError('Please fill in your name, email, and password.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    if (!signupPasswordReport.isValid) {
+      setError(signupPasswordReport.errors[0] || 'Password does not meet all security requirements.');
       return;
     }
 
@@ -175,8 +181,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
       setError('Please enter the 6-digit verification code.');
       return;
     }
-    if (!newPassword || newPassword.length < 6) {
-      setError('New password must be at least 6 characters long.');
+    if (!newPassword || !resetPasswordReport.isValid) {
+      setError(resetPasswordReport.errors[0] || 'New password does not meet all security requirements.');
       return;
     }
     if (newPassword !== retypePassword) {
@@ -537,7 +543,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      placeholder="At least 6 characters"
+                      placeholder="12–16 characters (e.g. Nova#Jade7Star)"
                       required
                       className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-zinc-900/90 border border-zinc-700/80 text-white text-xs placeholder:text-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                     />
@@ -549,12 +555,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+
+                  {/* Real-time Interactive Password Checklist & Passphrase Generator */}
+                  <PasswordPolicyChecklist
+                    report={signupPasswordReport}
+                    passwordValue={password}
+                    onGeneratePassphrase={(newPwd) => setPassword(newPwd)}
+                    userContext={{ fullName, email, phone }}
+                  />
                 </div>
 
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-emerald-600 hover:from-purple-500 hover:to-emerald-500 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+                  disabled={loading || !signupPasswordReport.isValid || !fullName.trim() || !email.trim()}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-emerald-600 hover:from-purple-500 hover:to-emerald-500 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                 >
                   {loading ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -642,7 +656,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
-                      placeholder="At least 6 characters"
+                      placeholder="12–16 characters (e.g. Nova#Jade7Star)"
                       required
                       className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-zinc-900/90 border border-zinc-700/80 text-white text-xs placeholder:text-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                     />
@@ -654,6 +668,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
                       {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+
+                  {/* Real-time Interactive Password Checklist for Reset Mode */}
+                  <PasswordPolicyChecklist
+                    report={resetPasswordReport}
+                    passwordValue={newPassword}
+                    onGeneratePassphrase={(newPwd) => {
+                      setNewPassword(newPwd);
+                      setRetypePassword(newPwd);
+                    }}
+                    userContext={{ email }}
+                  />
                 </div>
 
                 <div className="space-y-1.5">
@@ -687,8 +712,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onContinueAsGuest }) => {
 
                 <button
                   type="submit"
-                  disabled={loading || otp.length !== 6 || !newPassword || newPassword !== retypePassword}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  disabled={loading || otp.length !== 6 || !resetPasswordReport.isValid || !newPassword || newPassword !== retypePassword}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />

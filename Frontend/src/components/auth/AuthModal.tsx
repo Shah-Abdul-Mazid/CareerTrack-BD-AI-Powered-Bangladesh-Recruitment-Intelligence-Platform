@@ -4,6 +4,8 @@ import {
   ArrowRight, CheckCircle2, AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle 
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { validatePassword } from '../../utils/passwordPolicy';
+import { PasswordPolicyChecklist } from './PasswordPolicyChecklist';
 
 export const AuthModal: React.FC = () => {
   const { 
@@ -40,6 +42,10 @@ export const AuthModal: React.FC = () => {
   // Countdown timer for resend
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
+
+  // Real-time password validation reports
+  const signupPasswordReport = validatePassword(password, { fullName, email, phone });
+  const resetPasswordReport = validatePassword(newPassword, { email });
 
   useEffect(() => {
     if (isAuthModalOpen) {
@@ -94,6 +100,16 @@ export const AuthModal: React.FC = () => {
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!fullName.trim() || !email.trim() || !password) {
+      setError('Please fill in your name, email, and password.');
+      return;
+    }
+    if (!signupPasswordReport.isValid) {
+      setError(signupPasswordReport.errors[0] || 'Password does not meet all security requirements.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await signup({
@@ -166,8 +182,8 @@ export const AuthModal: React.FC = () => {
       setError('Please enter the 6-digit verification code.');
       return;
     }
-    if (!newPassword || newPassword.length < 6) {
-      setError('New password must be at least 6 characters long.');
+    if (!newPassword || !resetPasswordReport.isValid) {
+      setError(resetPasswordReport.errors[0] || 'New password does not meet all security requirements.');
       return;
     }
     if (newPassword !== retypePassword) {
@@ -409,10 +425,9 @@ export const AuthModal: React.FC = () => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
-                    minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 6 characters"
+                    placeholder="12–16 characters (e.g. Nova#Jade7Star)"
                     className="input-dark pl-9 pr-9 w-full text-xs sm:text-sm py-2"
                   />
                   <button
@@ -423,12 +438,20 @@ export const AuthModal: React.FC = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+
+                {/* Real-time Interactive Password Checklist & Passphrase Generator */}
+                <PasswordPolicyChecklist
+                  report={signupPasswordReport}
+                  passwordValue={password}
+                  onGeneratePassphrase={(newPwd) => setPassword(newPwd)}
+                  userContext={{ fullName, email, phone }}
+                />
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
-                className="btn-primary w-full py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 mt-2"
+                disabled={loading || !signupPasswordReport.isValid || !fullName.trim() || !email.trim()}
+                className="btn-primary w-full py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -540,10 +563,9 @@ export const AuthModal: React.FC = () => {
                   <input
                     type={showNewPassword ? 'text' : 'password'}
                     required
-                    minLength={6}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 6 characters"
+                    placeholder="12–16 characters (e.g. Nova#Jade7Star)"
                     className="input-dark pl-9 pr-9 w-full text-xs sm:text-sm py-2"
                   />
                   <button
@@ -554,6 +576,17 @@ export const AuthModal: React.FC = () => {
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+
+                {/* Real-time Interactive Password Checklist for Reset Mode */}
+                <PasswordPolicyChecklist
+                  report={resetPasswordReport}
+                  passwordValue={newPassword}
+                  onGeneratePassphrase={(newPwd) => {
+                    setNewPassword(newPwd);
+                    setRetypePassword(newPwd);
+                  }}
+                  userContext={{ email }}
+                />
               </div>
 
               {/* Retype Password */}
@@ -609,8 +642,8 @@ export const AuthModal: React.FC = () => {
 
               <button
                 type="submit"
-                disabled={loading || otp.length !== 6 || !newPassword || newPassword !== retypePassword}
-                className="btn-primary w-full py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 mt-2"
+                disabled={loading || otp.length !== 6 || !resetPasswordReport.isValid || !newPassword || newPassword !== retypePassword}
+                className="btn-primary w-full py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
