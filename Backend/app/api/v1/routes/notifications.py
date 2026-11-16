@@ -4,18 +4,22 @@ Frontend calls GET /api/v1/notifications (with .catch(() => []) guard).
 """
 
 from __future__ import annotations
+
 from datetime import datetime, timezone
 from typing import Optional
+
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
+
 from app.core.security import decode_access_token
+from app.core.sms import send_sms
 
 router = APIRouter()
 
 ADMIN_EMAILS = {"shahabdulmazid.ezan@yahoo.com", "admin@careertrack.bd"}
 
 
-def _is_admin(authorization: Optional[str]) -> bool:
+def _is_admin(authorization: Optional[str]) -> bool:  # noqa: UP045
     if not authorization or not authorization.startswith("Bearer "):
         return False
     raw_token = authorization.split("Bearer ", 1)[1].strip()
@@ -64,3 +68,15 @@ async def mark_read(notif_id: int):
             n["is_read"] = True
             return n
     return {"id": notif_id, "is_read": True}
+
+
+class SendSmsRequest(BaseModel):
+    to_phone: Optional[str] = None  # noqa: UP045
+    message: str
+
+
+@router.post("/send-sms", summary="Dispatch real SMS to phone")
+async def send_sms_alert(payload: SendSmsRequest):
+    phone = payload.to_phone or "+880 1531329222"
+    result = send_sms(phone, payload.message)
+    return result

@@ -33,4 +33,7 @@ Backend/app/uploads/
 *.json.bak
 careertrack_apps.json
 careertrack_docs.json
+test_*.py
+*.png
+account_sid_crop.png
 

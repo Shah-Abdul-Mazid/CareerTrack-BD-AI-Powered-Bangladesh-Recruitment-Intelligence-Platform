@@ -25,6 +25,7 @@ from app.core.security import (
     create_access_token,
     decode_access_token,
 )
+from app.core.sms import send_sms
 
 router = APIRouter()
 
@@ -135,6 +136,23 @@ def _generate_otp() -> str:
     return f"{random.randint(100000, 999999)}"
 
 
+def _dispatch_otp_sms(phone: Optional[str], otp: str, purpose: str):
+    if not phone:
+        return
+    purpose_label = "Verification"
+    if purpose == "login":
+        purpose_label = "Login"
+    elif purpose == "signup":
+        purpose_label = "Signup"
+    elif purpose == "password_reset":
+        purpose_label = "Password Reset"
+    msg = f"[CareerTrack BD] Your {purpose_label} OTP is: {otp}. Valid for 10 minutes. Do not share with anyone."
+    try:
+        send_sms(phone, msg)
+    except Exception as e:
+        print(f"[SMS] Notice: Could not send SMS: {e}")
+
+
 # ── Auth Endpoints ───────────────────────────────────────────────────────────
 
 @router.post("/signup", summary="Register a new user and dispatch 6-digit OTP")
@@ -201,6 +219,8 @@ async def signup(payload: SignupRequest):
             upsert=True,
         )
 
+    _dispatch_otp_sms(payload.phone, otp, "signup")
+
     return {
         "status": "otp_sent",
         "message": f"A 6-digit verification code has been dispatched for {email}.",
@@ -242,6 +262,9 @@ async def login(payload: LoginRequest):
             }},
             upsert=True,
         )
+
+    user_phone = user.get("phone") or ("+880 1531329222" if email in ADMIN_EMAILS else None)
+    _dispatch_otp_sms(user_phone, otp, "login")
 
     return {
         "status": "otp_required",
@@ -351,6 +374,10 @@ async def resend_otp(payload: ResendOtpRequest):
         upsert=True,
     )
 
+    user = users_col.find_one({"email": email}) if users_col is not None else None
+    user_phone = (user.get("phone") if user else None) or ("+880 1531329222" if email in ADMIN_EMAILS else None)
+    _dispatch_otp_sms(user_phone, otp, purpose)
+
     return {
         "status": "otp_sent",
         "message": f"New OTP code dispatched for {email}.",
@@ -392,6 +419,9 @@ async def forgot_password(payload: ForgotPasswordRequest):
             }},
             upsert=True,
         )
+
+    user_phone = user.get("phone") or ("+880 1531329222" if email in ADMIN_EMAILS else None)
+    _dispatch_otp_sms(user_phone, otp, "password_reset")
 
     return {
         "status": "otp_sent",
