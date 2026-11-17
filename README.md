@@ -101,18 +101,6 @@ Job Planner/
 
 ---
 
-## 📋 Pre-Seeded Real Recruitment Records
-
-The system includes pre-seeded live application records representing actual Bangladesh recruitment fixtures:
-
-| Organization | Designation | Grade | Job ID | Tracking ID / Roll | Status |
-| :--- | :--- | :---: | :---: | :---: | :--- |
-| **Bangladesh Bank** | Senior Officer | Grade 9 | `26101` | Roll: `116683` | `Admit Card Available` (Schedule Pending) |
-| **Sonali Bank PLC** | Assistant Database Administrator | Grade 9 | `26109` | `2052062-838456` / Roll: `338528` | `Submitted` |
-| **Combined 10 Banks / BSCS** | Officer (IT) / MIS & ICT Officer | Grade 10 | `26105` | `2052062-932886` | `Submitted` (7-Bank Preference List) |
-| **Combined 8 Banks / BSCS** | Senior Officer (IT) | Grade 9 | `26104` | `2052062-394651` | `Submitted` (4-Bank Preference List) |
-
----
 
 ## 🚀 Getting Started Locally
 
